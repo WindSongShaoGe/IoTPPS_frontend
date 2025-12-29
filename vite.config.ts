@@ -5,16 +5,14 @@ import { AntDesignVueResolver } from 'unplugin-vue-components/resolvers'
 import Components from 'unplugin-vue-components/vite'
 import { defineConfig, splitVendorChunkPlugin } from 'vite'
 
-// https://vitejs.dev/config/
-export default defineConfig(({ command, mode }) => {
-  console.log(`🚀 command: ${command}, mode: ${mode}\n`)
+export default defineConfig(({ command }) => {
+  console.log(`🚀 command: ${command}\n`)
   return {
     base: './',
     plugins: [
       vue(),
       splitVendorChunkPlugin(),
       Components({
-        // Vue 组件自动按需导入
         resolvers: [
           AntDesignVueResolver({
             resolveIcons: true,
@@ -43,16 +41,19 @@ export default defineConfig(({ command, mode }) => {
         },
       },
     },
+
     server: {
       open: true,
       host: '127.0.0.1',
       port: 4173,
       strictPort: true,
 
-      // ✅ 关键：把前端 /dev-api 开头的请求转发到后端 8080
-      // 例如：axios.get('/dev-api/test/user/list')
-      // 实际会请求到： http://127.0.0.1:8080/test/user/list
+      // ✅ 关键：所有 /api 和 /dev-api 都转发到后端 8080
       proxy: {
+        '/api': {
+          target: 'http://127.0.0.1:8080',
+          changeOrigin: true,
+        },
         '/dev-api': {
           target: 'http://127.0.0.1:8080',
           changeOrigin: true,

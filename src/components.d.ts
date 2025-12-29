@@ -7,6 +7,7 @@ declare module '@vue/runtime-core' {
   export interface GlobalComponents {
     CodeViewer: typeof import('./components/CodeViewer.vue')['default']
     DynamicPropertiesPanel: typeof import('./components/DynamicPropertiesPanel.vue')['default']
+    LoginPage: typeof import('./components/LoginPage.vue')['default']
     Palette: typeof import('./components/palette/Palette.vue')['default']
     PropertiesEditor: typeof import('./components/PropertiesEditor.vue')['default']
     TestPropertiesEditor: typeof import('./components/test/TestPropertiesEditor.vue')['default']
