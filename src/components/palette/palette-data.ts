@@ -55,8 +55,8 @@ function item(
   return {
     type,
     label: zh, // 左侧显示中文
-    icon,      // 左侧卡片图标
-    subGroup,  // 机电类内部再分 A/B/C
+    icon, // 左侧卡片图标
+    subGroup, // 机电类内部再分 A/B/C
     properties: {
       deviceName: zh,
       deviceNameEn: en,
@@ -71,7 +71,7 @@ export const groups: PaletteGroup[] = [
     name: '机电类设备',
     items: [
       // ==== A 组（示例）====
-      item('bpmn:motorizedValve', '电动阀门', 'Motorized Valve', motorizedValveIcon, 'A'),
+      item('bpmn:motorized-valve', '电动阀门', 'Motorized Valve', motorizedValveIcon, 'A'),
       item('bpmn:pump', '泵', 'Pump', pumpIcon, 'A'),
       item('bpmn:backwash-pump', '反冲洗泵', 'Backwash Pump', backwashPumpIcon, 'A'),
       item('bpmn:dosing-pump', '计量泵', 'Dosing Pump', dosingPumpIcon, 'A'),
@@ -96,7 +96,7 @@ export const groups: PaletteGroup[] = [
     items: [
       item('bpmn:motor', '电机', 'Motor', motorIcon),
       item('bpmn:relay', '继电器', 'Relay', relayIcon),
-      item('bpmn:solenoidValve', '电磁阀', 'Solenoid Valve', solenoidValveIcon),
+      item('bpmn:solenoid-valve', '电磁阀', 'Solenoid Valve', solenoidValveIcon),
     ],
   },
   {
@@ -104,32 +104,32 @@ export const groups: PaletteGroup[] = [
     name: '控制类设备',
     items: [
       item('bpmn:plc', 'PLC', 'PLC', plcIcon),
-      item('bpmn:chemicalDosingController', '配药控制器', 'Chemical Dosing Controller', chemicalDosingControllerIcon),
-      item('bpmn:differentialPressureController', '压差控制器（UF/RO）', 'Differential Pressure Controller', differentialPressureControllerIcon),
-      item('bpmn:dataLogger', '数据记录器', 'Data Logger', dataLoggerIcon),
+      item('bpmn:chemical-dosing-controller', '配药控制器', 'Chemical Dosing Controller', chemicalDosingControllerIcon),
+      item('bpmn:differential-pressure-controller', '压差控制器（UF/RO）', 'Differential Pressure Controller', differentialPressureControllerIcon),
+      item('bpmn:data-logger', '数据记录器', 'Data Logger', dataLoggerIcon),
     ],
   },
   {
     key: 'sensing',
     name: '感知类设备',
     items: [
-      item('bpmn:conductivityAnalyzer', '电导率分析仪', 'Conductivity Analyzer', conductivityAnalyzerIcon),
-      item('bpmn:orpAnalyzer', '氧化还原电位分析仪', 'ORP Analyzer', ORP_AnalyzerIcon),
-      item('bpmn:hardnessMeter', '水硬度计', 'Hardness Meter of Water', hardnessMeterOfWaterIcon),
-      item('bpmn:phAnalyzer', 'pH 分析仪', 'pH Analyzer', pH_AnalyzerIcon),
-      item('bpmn:flowTransmitter', '流量变送器', 'Flow Transmitter', flowTransmitterIcon),
-      item('bpmn:levelTransmitter', '液位变送器', 'Level Transmitter', levelTransmitterIcon),
-      item('bpmn:pressureMeter', '液体压力计', 'Pressure Meter', pressureMeterIcon),
-      item('bpmn:differentialPressureTransmitter', '差压指示变送器', 'Differential Pressure Indicating Transmitter', DPIT_Icon),
+      item('bpmn:conductivity-analyzer', '电导率分析仪', 'Conductivity Analyzer', conductivityAnalyzerIcon),
+      item('bpmn:orp-analyzer', '氧化还原电位分析仪', 'ORP Analyzer', ORP_AnalyzerIcon),
+      item('bpmn:hardness-meter', '水硬度计', 'Hardness Meter of Water', hardnessMeterOfWaterIcon),
+      item('bpmn:ph-analyzer', 'pH 分析仪', 'pH Analyzer', pH_AnalyzerIcon),
+      item('bpmn:flow-transmitter', '流量变送器', 'Flow Transmitter', flowTransmitterIcon),
+      item('bpmn:level-transmitter', '液位变送器', 'Level Transmitter', levelTransmitterIcon),
+      item('bpmn:pressure-meter', '液体压力计', 'Pressure Meter', pressureMeterIcon),
+      item('bpmn:differential-pressure-transmitter', '差压指示变送器', 'Differential Pressure Indicating Transmitter', DPIT_Icon),
     ],
   },
   {
     key: 'communication',
     name: '通信类设备',
     items: [
-      item('bpmn:protocolModule', '通信协议模块', 'Communication Protocol Module', communicationProtocolIcon),
-      item('bpmn:wirelessModule', '无线通信模块', 'Wireless Communication Module', wirelessCommunicationModuleIcon),
-      item('bpmn:dtuGateway', '数据采集网关（DTU）', 'Data Transmission Unit (DTU)', dataTransmissionUnitIcon),
+      item('bpmn:protocol-module', '通信协议模块', 'Communication Protocol Module', communicationProtocolIcon),
+      item('bpmn:wireless-module', '无线通信模块', 'Wireless Communication Module', wirelessCommunicationModuleIcon),
+      item('bpmn:dtu-gateway', '数据采集网关（DTU）', 'Data Transmission Unit (DTU)', dataTransmissionUnitIcon),
     ],
   },
   {

@@ -19,7 +19,7 @@ interface LevelProps {
   powerSupply: string
   value: number | null
   alarmLow: number | null
-  alarmHigh: number | string | null   // ✅ 改成 string 也可以
+  alarmHigh: number | string | null
   setpoint: number | null
 }
 
@@ -28,26 +28,26 @@ class LevelModel extends RectNodeModel {
 
   static formSchema: FieldSchema[] = [
     ...baseFields,
-    // 删除原来的 range 和 alarmHigh
-    ...sensingFields.filter(field => !field.key.startsWith('range') && field.key !== 'alarmHigh').map(field => {
-      const immutable = [
-        'deviceName',
-        'param',
-        'unit',
-        'accuracy',
-        'sampleFreq',
-        'interfaceType',
-        'commMethod',
-        'powerSupply'
-      ]
-      if (immutable.includes(field.key)) {
-        return { ...field, disabled: true, readOnly: true }
-      }
-      return field
-    }),
-    // ✅ 新的报警上限字段
+    ...sensingFields
+      .filter(field => !field.key.startsWith('range') && field.key !== 'alarmHigh')
+      .map(field => {
+        const immutable = [
+          'deviceName',
+          'param',
+          'unit',
+          'accuracy',
+          'sampleFreq',
+          'interfaceType',
+          'commMethod',
+          'powerSupply'
+        ]
+        if (immutable.includes(field.key)) {
+          return { ...field, disabled: true, readOnly: true }
+        }
+        return field
+      }),
     { key: 'alarmHigh', label: '报警上限', type: 'text', placeholder: '待定额定高度' },
-    { key: 'rangeDisplay', label: '测量范围', type: 'text' },
+    { key: 'rangeDisplay', label: '测量范围', type: 'text', disabled: true, readOnly: true },
     { key: 'note', label: '备注', type: 'textarea', placeholder: '请输入备注信息' }
   ]
 
@@ -62,21 +62,17 @@ class LevelModel extends RectNodeModel {
     this.properties = this.getInitialProperties(data.properties as Partial<LevelProps> | undefined)
   }
 
-  setProperties(properties: Partial<LevelProps>): void {
+  setProperties(patch: Partial<LevelProps>): void {
     const allowed: Partial<LevelProps> = {}
 
-    if (properties.productModel !== undefined) allowed.productModel = properties.productModel
-    if (properties.installDate !== undefined) allowed.installDate = properties.installDate
-    if (properties.note !== undefined) allowed.note = properties.note
-    if (properties.value !== undefined) allowed.value = properties.value
-    if (properties.setpoint !== undefined) allowed.setpoint = properties.setpoint
-    if (properties.alarmHigh !== undefined) {
-      allowed.alarmHigh = properties.alarmHigh || this.properties.alarmHigh
-    }
+    if (patch.productModel !== undefined) allowed.productModel = patch.productModel
+    if (patch.installDate !== undefined) allowed.installDate = patch.installDate
+    if (patch.note !== undefined) allowed.note = patch.note
+    if (patch.value !== undefined) allowed.value = patch.value
+    if (patch.setpoint !== undefined) allowed.setpoint = patch.setpoint
 
-    if (properties.rangeDisplay) {
-      allowed.rangeDisplay = this.properties.rangeDisplay
-    }
+    if (patch.alarmLow !== undefined) allowed.alarmLow = patch.alarmLow
+    if (patch.alarmHigh !== undefined) allowed.alarmHigh = patch.alarmHigh
 
     super.setProperties(allowed)
     this.properties = { ...this.properties, ...allowed }
@@ -98,7 +94,7 @@ class LevelModel extends RectNodeModel {
       powerSupply: '24 VDC',
       value: 3.8,
       alarmLow: 0.5,
-      alarmHigh: 5.5, // ✅ 初始化字符串
+      alarmHigh: 5.5,
       setpoint: 3
     }
     return { ...defaults, ...user, rangeDisplay: defaults.rangeDisplay }
@@ -139,7 +135,7 @@ class LevelView extends RectNode {
 }
 
 export default {
-  type: 'bpmn:levelTransmitter',
+  type: 'bpmn:level-transmitter',
   view: LevelView,
   model: LevelModel
 }

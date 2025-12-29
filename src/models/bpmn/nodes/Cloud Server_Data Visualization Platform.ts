@@ -1,12 +1,15 @@
+// src/models/bpmn/nodes/Cloud Server_Data Visualization Platform.ts
 import { GraphModel, h, NodeConfig, RectNode, RectNodeModel } from '@logicflow/core'
 import { getBpmnId } from '@logicflow/extension/es/bpmn/getBpmnId'
-
 import dataVisualizationPlatformSvg from '@/assets/icons/Cloud Server_Data Visualization Platform.svg'
 import { baseFields, cloudFields, type FieldSchema } from '@/models/bpmn/schemas/commonSchema'
 
 interface DataVisualizationPlatformProps {
-  deviceName: string
-  deviceNameEn: string
+  nameZh: string
+  nameEn: string
+  deviceName?: string
+  deviceNameEn?: string
+
   installDate: string
   note: string
   type: string
@@ -18,16 +21,16 @@ interface DataVisualizationPlatformProps {
 class DataVisualizationPlatformModel extends RectNodeModel {
   static extendKey = 'DataVisualizationPlatformModel'
 
-  // ✅ 在这里加入备注框
   static formSchema: FieldSchema[] = [
-  ...baseFields.filter(f => f.key !== 'productModel'),
-  ...cloudFields.filter(f => f.key !== 'installDate' && f.key !== 'productModel'),
-  { key: 'note', label: '备注', type: 'textarea', placeholder: '请输入备注信息' }
-]
+    ...baseFields.filter(f => f.key !== 'productModel'),
+    ...cloudFields.filter(f => f.key !== 'installDate' && f.key !== 'productModel'),
+    { key: 'note', label: '备注', type: 'textarea', placeholder: '请输入备注信息' },
+  ]
 
+  declare properties: DataVisualizationPlatformProps
 
   constructor(data: NodeConfig, gm: GraphModel) {
-    if (!data.id) data.id = `DataVisualizationPlatform_${getBpmnId()}`
+    if (!data.id) data.id = `data-visualization-platform_${getBpmnId()}`
     super(data, gm)
     this.width = this.width || 96
     this.height = this.height || 56
@@ -37,22 +40,48 @@ class DataVisualizationPlatformModel extends RectNodeModel {
   initNodeData(data: any) {
     super.initNodeData(data)
     const defaults: DataVisualizationPlatformProps = {
+      nameZh: '数据可视化平台',
+      nameEn: 'Data Visualization Platform',
       deviceName: '数据可视化平台',
       deviceNameEn: 'Data Visualization Platform',
+
       installDate: '2024-05-12',
       note: '',
       type: 'Grafana 10',
       function: '数据展示',
       interfaceType: 'API',
-      commMethod: 'Web'
+      commMethod: 'Web',
     }
-    this.properties = { ...defaults, ...(data.properties || {}) }
+    const merged = { ...defaults, ...(data.properties || {}) } as DataVisualizationPlatformProps
+    if (!merged.nameZh && merged.deviceName) merged.nameZh = String(merged.deviceName)
+    if (!merged.nameEn && merged.deviceNameEn) merged.nameEn = String(merged.deviceNameEn)
+    merged.deviceName = merged.nameZh
+    merged.deviceNameEn = merged.nameEn
+    this.properties = merged
+  }
+
+  setProperties(p: Partial<DataVisualizationPlatformProps>) {
+    const allowed: Partial<DataVisualizationPlatformProps> = {}
+    if (p.nameZh !== undefined) allowed.nameZh = p.nameZh
+    if (p.nameEn !== undefined) allowed.nameEn = p.nameEn
+    if (p.installDate !== undefined) allowed.installDate = p.installDate
+    if (p.note !== undefined) allowed.note = p.note
+    if (p.type !== undefined) allowed.type = p.type
+    if (p.function !== undefined) allowed.function = p.function
+    if (p.interfaceType !== undefined) allowed.interfaceType = p.interfaceType
+    if (p.commMethod !== undefined) allowed.commMethod = p.commMethod
+
+    super.setProperties(allowed)
+
+    const next = { ...this.properties, ...allowed } as DataVisualizationPlatformProps
+    next.deviceName = next.nameZh
+    next.deviceNameEn = next.nameEn
+    this.properties = next
   }
 }
 
 class DataVisualizationPlatformView extends RectNode {
   static extendKey = 'DataVisualizationPlatformNode'
-
   getShape(): any {
     const { x, y, width, height, radius } = this.props.model
     const style = this.props.model.getNodeStyle()
@@ -66,7 +95,7 @@ class DataVisualizationPlatformView extends RectNode {
         height,
         fill: 'transparent',
         stroke: style.stroke,
-        'stroke-opacity': 0.0001
+        'stroke-opacity': 0.0001,
       }),
       h('image', {
         href: dataVisualizationPlatformSvg,
@@ -75,17 +104,11 @@ class DataVisualizationPlatformView extends RectNode {
         width,
         height,
         preserveAspectRatio: 'xMidYMid meet',
-        'pointer-events': 'bounding-box'
-      })
+        'pointer-events': 'bounding-box',
+      }),
     ])
   }
 }
 
-const CloudServer_DataVisualizationPlatform = {
-  type: 'bpmn:data-visualization-platform',
-  view: DataVisualizationPlatformView,
-  model: DataVisualizationPlatformModel,
-}
-
+export default { type: 'bpmn:data-visualization-platform', view: DataVisualizationPlatformView, model: DataVisualizationPlatformModel }
 export { DataVisualizationPlatformView, DataVisualizationPlatformModel }
-export default CloudServer_DataVisualizationPlatform

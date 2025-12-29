@@ -2,11 +2,8 @@
 import { GraphModel, h, NodeConfig, RectNode, RectNodeModel } from '@logicflow/core'
 import { getBpmnId } from '@logicflow/extension/es/bpmn/getBpmnId'
 import { baseFields, sensingFields, type FieldSchema } from '@/models/bpmn/schemas/commonSchema'
-
-// ✅ 图标请放到 assets/icons，文件名无空格
 import hardnessSvg from '@/assets/icons/Sensing Devices_Hardness Meter of Water.svg'
 
-// 属性接口
 interface HardnessProps {
   deviceName: string
   productModel: string
@@ -26,7 +23,6 @@ interface HardnessProps {
   setpoint: number | null
 }
 
-// 模型
 class HardnessModel extends RectNodeModel {
   static extendKey = 'HardnessModel'
 
@@ -49,8 +45,7 @@ class HardnessModel extends RectNodeModel {
       }
       return field
     }),
-      { key: 'note', label: '备注', type: 'textarea', placeholder: '请输入备注信息' }
-
+    { key: 'note', label: '备注', type: 'textarea', placeholder: '请输入备注信息' }
   ]
 
   declare properties: HardnessProps
@@ -64,34 +59,36 @@ class HardnessModel extends RectNodeModel {
     this.properties = this.getInitialProperties(data.properties as Partial<HardnessProps> | undefined)
   }
 
-  setProperties(properties: Partial<HardnessProps>): void {
+  setProperties(patch: Partial<HardnessProps>): void {
     const allowed: Partial<HardnessProps> = {}
 
-    if (properties.productModel !== undefined) allowed.productModel = properties.productModel
-    if (properties.installDate !== undefined) allowed.installDate = properties.installDate
-    if (properties.note !== undefined) allowed.note = properties.note
-    if (properties.value !== undefined) allowed.value = properties.value
-    if (properties.setpoint !== undefined) allowed.setpoint = properties.setpoint
+    if (patch.productModel !== undefined) allowed.productModel = patch.productModel
+    if (patch.installDate !== undefined) allowed.installDate = patch.installDate
+    if (patch.note !== undefined) allowed.note = patch.note
+    if (patch.value !== undefined) allowed.value = patch.value
+    if (patch.setpoint !== undefined) allowed.setpoint = patch.setpoint
 
-    // 范围：min ≥ 0 且 min ≤ max
-    if (properties.range) {
-      let newMin = properties.range.min ?? this.properties.range.min
-      let newMax = properties.range.max ?? this.properties.range.max
+    // ✅ range：min ≥ 0 且 min ≤ max（允许编辑 min/max）
+    if (patch.range) {
+      let newMin = patch.range.min ?? this.properties.range.min
+      let newMax = patch.range.max ?? this.properties.range.max
       if (newMin < 0) newMin = 0
       if (newMin <= newMax) {
         allowed.range = { ...this.properties.range, min: newMin, max: newMax, unit: this.properties.range.unit }
       }
     }
 
-    // 报警上下限
-    let alarmLow = properties.alarmLow ?? this.properties.alarmLow
-    let alarmHigh = properties.alarmHigh ?? this.properties.alarmHigh
-    if (alarmLow !== null && alarmHigh !== null && alarmLow > alarmHigh) {
-      alarmLow = this.properties.alarmLow
-      alarmHigh = this.properties.alarmHigh
+    // ✅ 报警上下限：保证 low ≤ high
+    const hasLow = patch.alarmLow !== undefined
+    const hasHigh = patch.alarmHigh !== undefined
+    if (hasLow || hasHigh) {
+      const nextLow = hasLow ? patch.alarmLow : this.properties.alarmLow
+      const nextHigh = hasHigh ? patch.alarmHigh : this.properties.alarmHigh
+      if (!(nextLow !== null && nextHigh !== null && nextLow > nextHigh)) {
+        if (hasLow) allowed.alarmLow = patch.alarmLow!
+        if (hasHigh) allowed.alarmHigh = patch.alarmHigh!
+      }
     }
-    allowed.alarmLow = alarmLow
-    allowed.alarmHigh = alarmHigh
 
     super.setProperties(allowed)
     this.properties = { ...this.properties, ...allowed }
@@ -120,7 +117,6 @@ class HardnessModel extends RectNodeModel {
     return {
       ...defaults,
       ...user,
-      // 只读字段强制覆盖
       deviceName: defaults.deviceName,
       param: defaults.param,
       unit: defaults.unit,
@@ -134,7 +130,6 @@ class HardnessModel extends RectNodeModel {
   }
 }
 
-// 视图
 class HardnessView extends RectNode {
   static extendKey = 'HardnessNode'
 
@@ -143,7 +138,6 @@ class HardnessView extends RectNode {
     const style = this.props.model.getNodeStyle()
 
     return h('g', {}, [
-      // 命中区承接交互
       h('rect', {
         x: x - width / 2,
         y: y - height / 2,
@@ -156,7 +150,6 @@ class HardnessView extends RectNode {
         'stroke-opacity': 0.0001,
         'pointer-events': 'all'
       }),
-      // 图标层不吃事件
       h('image', {
         href: hardnessSvg,
         x: x - width / 2,
@@ -171,7 +164,7 @@ class HardnessView extends RectNode {
 }
 
 export default {
-  type: 'bpmn:hardnessMeter',
+  type: 'bpmn:hardness-meter',
   view: HardnessView,
   model: HardnessModel
 }

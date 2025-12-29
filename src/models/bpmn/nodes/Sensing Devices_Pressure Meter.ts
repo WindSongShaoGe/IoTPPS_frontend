@@ -2,11 +2,8 @@
 import { GraphModel, h, NodeConfig, RectNode, RectNodeModel } from '@logicflow/core'
 import { getBpmnId } from '@logicflow/extension/es/bpmn/getBpmnId'
 import { baseFields, sensingFields, type FieldSchema } from '@/models/bpmn/schemas/commonSchema'
-
-// ✅ 导入图标，路径改成无空格文件名
 import pressureSvg from '@/assets/icons/Sensing Devices_Pressure Meter.svg'
 
-// 属性接口
 interface PressureProps {
   deviceName: string
   productModel: string
@@ -26,7 +23,6 @@ interface PressureProps {
   setpoint: number | null
 }
 
-// 模型
 class PressureModel extends RectNodeModel {
   static extendKey = 'PressureModel'
 
@@ -51,8 +47,7 @@ class PressureModel extends RectNodeModel {
       }
       return field
     }),
-      { key: 'note', label: '备注', type: 'textarea', placeholder: '请输入备注信息' }
-
+    { key: 'note', label: '备注', type: 'textarea', placeholder: '请输入备注信息' }
   ]
 
   declare properties: PressureProps
@@ -66,24 +61,25 @@ class PressureModel extends RectNodeModel {
     this.properties = this.getInitialProperties(data.properties as Partial<PressureProps> | undefined)
   }
 
-  setProperties(properties: Partial<PressureProps>): void {
+  setProperties(patch: Partial<PressureProps>): void {
     const allowed: Partial<PressureProps> = {}
 
-    if (properties.productModel !== undefined) allowed.productModel = properties.productModel
-    if (properties.installDate !== undefined) allowed.installDate = properties.installDate
-    if (properties.note !== undefined) allowed.note = properties.note
-    if (properties.value !== undefined) allowed.value = properties.value
-    if (properties.setpoint !== undefined) allowed.setpoint = properties.setpoint
+    if (patch.productModel !== undefined) allowed.productModel = patch.productModel
+    if (patch.installDate !== undefined) allowed.installDate = patch.installDate
+    if (patch.note !== undefined) allowed.note = patch.note
+    if (patch.value !== undefined) allowed.value = patch.value
+    if (patch.setpoint !== undefined) allowed.setpoint = patch.setpoint
 
-    // 报警上下限
-    let alarmLow = properties.alarmLow ?? this.properties.alarmLow
-    let alarmHigh = properties.alarmHigh ?? this.properties.alarmHigh
-    if (alarmLow !== null && alarmHigh !== null && alarmLow > alarmHigh) {
-      alarmLow = this.properties.alarmLow
-      alarmHigh = this.properties.alarmHigh
+    const hasLow = patch.alarmLow !== undefined
+    const hasHigh = patch.alarmHigh !== undefined
+    if (hasLow || hasHigh) {
+      const nextLow = hasLow ? patch.alarmLow : this.properties.alarmLow
+      const nextHigh = hasHigh ? patch.alarmHigh : this.properties.alarmHigh
+      if (!(nextLow !== null && nextHigh !== null && nextLow > nextHigh)) {
+        if (hasLow) allowed.alarmLow = patch.alarmLow!
+        if (hasHigh) allowed.alarmHigh = patch.alarmHigh!
+      }
     }
-    allowed.alarmLow = alarmLow
-    allowed.alarmHigh = alarmHigh
 
     super.setProperties(allowed)
     this.properties = { ...this.properties, ...allowed }
@@ -120,12 +116,11 @@ class PressureModel extends RectNodeModel {
       interfaceType: defaults.interfaceType,
       commMethod: defaults.commMethod,
       powerSupply: defaults.powerSupply,
-      range: { ...defaults.range } // 范围固定不可变
+      range: { ...defaults.range }
     }
   }
 }
 
-// 视图
 class PressureView extends RectNode {
   static extendKey = 'PressureNode'
 
@@ -134,7 +129,6 @@ class PressureView extends RectNode {
     const style = this.props.model.getNodeStyle()
 
     return h('g', {}, [
-      // 透明交互区
       h('rect', {
         x: x - width / 2,
         y: y - height / 2,
@@ -147,7 +141,6 @@ class PressureView extends RectNode {
         'stroke-opacity': 0.0001,
         'pointer-events': 'all'
       }),
-      // 图标层
       h('image', {
         href: pressureSvg,
         x: x - width / 2,
@@ -162,7 +155,7 @@ class PressureView extends RectNode {
 }
 
 export default {
-  type: 'bpmn:pressureMeter',
+  type: 'bpmn:pressure-meter',
   view: PressureView,
   model: PressureModel
 }

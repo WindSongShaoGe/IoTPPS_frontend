@@ -1,14 +1,18 @@
+// src/models/bpmn/nodes/Communication Devices_Wireless Communication Module.ts
 import { GraphModel, h, NodeConfig, RectNode, RectNodeModel } from '@logicflow/core'
 import { getBpmnId } from '@logicflow/extension/es/bpmn/getBpmnId'
 import wirelessSvg from '@/assets/icons/Communication Devices_Wireless Communication Module.svg'
 import { baseFields, commFields, type FieldSchema } from '@/models/bpmn/schemas/commonSchema'
 
-interface WirelessProps {
-  deviceName: string
-  deviceNameEn: string
+export interface WirelessProps {
+  nameZh: string
+  nameEn: string
+  deviceName?: string
+  deviceNameEn?: string
+
   productModel: string
   installDate: string
-  note?: string
+  note: string
   protocols: string
   interfaceType: string
   commMethod: string
@@ -18,23 +22,16 @@ interface WirelessProps {
 class WirelessModel extends RectNodeModel {
   static extendKey = 'WirelessModel'
 
-  // ✅ 增加备注字段
   static formSchema: FieldSchema[] = [
-    ...baseFields,
-    ...commFields,
-    {
-      key: 'note',
-      label: '备注',
-      type: 'textarea',
-      placeholder: '请输入备注信息',
-      rows: 4
-    }
+    ...baseFields.filter(f => f.key !== 'note'),
+    ...commFields.filter(f => f.key !== 'note'),
+    { key: 'note', label: '备注', type: 'textarea', placeholder: '请输入备注信息' },
   ]
 
   declare properties: WirelessProps
 
   constructor(data: NodeConfig, gm: GraphModel) {
-    if (!data.id) data.id = `WIRELESS_${getBpmnId()}`
+    if (!data.id) data.id = `wireless-module_${getBpmnId()}`
     super(data, gm)
     this.width = this.width || 96
     this.height = this.height || 56
@@ -43,26 +40,61 @@ class WirelessModel extends RectNodeModel {
 
   initNodeData(data: any) {
     super.initNodeData(data)
+
     const defaults: WirelessProps = {
-      deviceName: 'Wireless Module',
+      nameZh: '无线通信模块',
+      nameEn: 'Wireless Module',
+      deviceName: '无线通信模块',
       deviceNameEn: 'Wireless Module',
+
       productModel: 'Huawei NB-IoT-01',
       installDate: '2024-05-12',
-      note: '远程数据回传', // ✅ 备注初始化为空（可以改成 '无线通讯' 等说明）
+      note: '远程数据回传',
       protocols: 'Wi-Fi, ZigBee, LoRa, NB-IoT',
       interfaceType: 'UART/网口',
       commMethod: '无线',
-      powerSupply: '12 VDC'
+      powerSupply: '12 VDC',
     }
-    this.properties = { ...defaults, ...(data.properties || {}) }
+
+    const merged = { ...defaults, ...(data.properties || {}) } as WirelessProps
+    if (!merged.nameZh && merged.deviceName) merged.nameZh = String(merged.deviceName)
+    if (!merged.nameEn && merged.deviceNameEn) merged.nameEn = String(merged.deviceNameEn)
+
+    merged.deviceName = merged.nameZh
+    merged.deviceNameEn = merged.nameEn
+    this.properties = merged
+  }
+
+  setProperties(p: Partial<WirelessProps>) {
+    const allowed: Partial<WirelessProps> = {}
+
+    if (p.nameZh !== undefined) allowed.nameZh = p.nameZh
+    if (p.nameEn !== undefined) allowed.nameEn = p.nameEn
+
+    if (p.productModel !== undefined) allowed.productModel = p.productModel
+    if (p.installDate !== undefined) allowed.installDate = p.installDate
+    if (p.note !== undefined) allowed.note = p.note
+    if (p.protocols !== undefined) allowed.protocols = p.protocols
+    if (p.interfaceType !== undefined) allowed.interfaceType = p.interfaceType
+    if (p.commMethod !== undefined) allowed.commMethod = p.commMethod
+    if (p.powerSupply !== undefined) allowed.powerSupply = p.powerSupply
+
+    super.setProperties(allowed)
+
+    const next = { ...this.properties, ...allowed } as WirelessProps
+    next.deviceName = next.nameZh
+    next.deviceNameEn = next.nameEn
+    this.properties = next
   }
 }
 
 class WirelessView extends RectNode {
   static extendKey = 'WirelessNode'
+
   getShape(): any {
     const { x, y, width, height, radius } = this.props.model
     const style = this.props.model.getNodeStyle()
+
     return h('g', {}, [
       h('rect', {
         x: x - width / 2,
@@ -74,7 +106,6 @@ class WirelessView extends RectNode {
         fill: 'transparent',
         stroke: style.stroke,
         'stroke-opacity': 0.0001,
-        'pointer-events': 'all'
       }),
       h('image', {
         href: wirelessSvg,
@@ -83,11 +114,11 @@ class WirelessView extends RectNode {
         width,
         height,
         preserveAspectRatio: 'xMidYMid meet',
-        'pointer-events': 'none'
-      })
+        'pointer-events': 'bounding-box',
+      }),
     ])
   }
 }
 
-export default { type: 'bpmn:wirelessModule', view: WirelessView, model: WirelessModel }
+export default { type: 'bpmn:wireless-module', view: WirelessView, model: WirelessModel }
 export { WirelessModel, WirelessView }

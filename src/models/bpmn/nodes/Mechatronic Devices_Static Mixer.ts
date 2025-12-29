@@ -1,16 +1,18 @@
 // src/models/bpmn/nodes/MechatronicDevices_StaticMixer.ts
 import { GraphModel, h, NodeConfig, RectNode, RectNodeModel } from '@logicflow/core'
 import { getBpmnId } from '@logicflow/extension/es/bpmn/getBpmnId'
-
+import type { FieldSchema } from '@/models/bpmn/schemas/commonSchema'
 import staticMixerSvg from '@/assets/icons/Mechatronic Devices_Static Mixer.svg'
 
 export interface StaticMixerProps {
-  deviceName: string
-  deviceNameEn: string
+  nameZh: string
+  nameEn: string
+  deviceName?: string
+  deviceNameEn?: string
+
   productModel: string
   installDate: string
   note: string
-
   controlParam: string
   unit: string
   range: string
@@ -21,19 +23,21 @@ export interface StaticMixerProps {
 class StaticMixerModel extends RectNodeModel {
   static extendKey = 'StaticMixerModel'
 
-  static formSchema = [
+  static formSchema: FieldSchema[] = [
     { key: 'productModel', label: '产品型号', type: 'text' },
     { key: 'installDate', label: '安装日期', type: 'date' },
-    { key: 'controlParam', label: '参数', type: 'text', disabled: true },
-    { key: 'unit', label: '单位', type: 'text', disabled: true },
-    { key: 'range', label: '设定范围', type: 'text', disabled: true },
-    { key: 'powerSupply', label: '供电方式', type: 'text', disabled: true },
+    { key: 'controlParam', label: '参数', type: 'text' },
+    { key: 'unit', label: '单位', type: 'text' },
+    { key: 'range', label: '设定范围', type: 'text' },
+    { key: 'powerSupply', label: '供电方式', type: 'text' },
     { key: 'setpoint', label: '设定值', type: 'number' },
-    { key: 'note', label: '备注', type: 'textarea' , placeholder: '请输入备注信息' },
+    { key: 'note', label: '备注', type: 'textarea', placeholder: '请输入备注信息' } as any,
   ]
 
+  declare properties: StaticMixerProps
+
   constructor(data: NodeConfig, graphModel: GraphModel) {
-    if (!data.id) data.id = `StaticMixer_${getBpmnId()}`
+    if (!data.id) data.id = `static-mixer_${getBpmnId()}`
     super(data, graphModel)
     this.width = this.width || 96
     this.height = this.height || 56
@@ -43,8 +47,11 @@ class StaticMixerModel extends RectNodeModel {
   initNodeData(data: any) {
     super.initNodeData(data)
     const defaults: StaticMixerProps = {
+      nameZh: '静态混合器',
+      nameEn: 'Static Mixer',
       deviceName: '静态混合器',
       deviceNameEn: 'Static Mixer',
+
       productModel: 'DN40不锈钢',
       installDate: '2024-05-12',
       note: '',
@@ -54,7 +61,31 @@ class StaticMixerModel extends RectNodeModel {
       powerSupply: '无',
       setpoint: 40,
     }
-    this.properties = { ...defaults, ...(data.properties || {}) }
+
+    const merged = { ...defaults, ...(data.properties || {}) } as StaticMixerProps
+    if (!merged.nameZh && merged.deviceName) merged.nameZh = String(merged.deviceName)
+    if (!merged.nameEn && merged.deviceNameEn) merged.nameEn = String(merged.deviceNameEn)
+    merged.deviceName = merged.nameZh
+    merged.deviceNameEn = merged.nameEn
+    this.properties = merged
+  }
+
+  setProperties(p: Partial<StaticMixerProps>) {
+    const allowed: Partial<StaticMixerProps> = {}
+    if (p.nameZh !== undefined) allowed.nameZh = p.nameZh
+    if (p.nameEn !== undefined) allowed.nameEn = p.nameEn
+    if (p.productModel !== undefined) allowed.productModel = p.productModel
+    if (p.installDate !== undefined) allowed.installDate = p.installDate
+    if (p.note !== undefined) allowed.note = p.note
+    if (p.setpoint !== undefined) allowed.setpoint = p.setpoint
+
+    // 🔒 固定字段不让改
+    super.setProperties(allowed)
+
+    const next = { ...this.properties, ...allowed } as StaticMixerProps
+    next.deviceName = next.nameZh
+    next.deviceNameEn = next.nameEn
+    this.properties = next
   }
 }
 
@@ -67,16 +98,10 @@ class StaticMixerView extends RectNode {
     const style = model.getNodeStyle()
     return h('g', {}, [
       h('rect', { x: x - width / 2, y: y - height / 2, rx: radius, ry: radius, width, height, fill: 'transparent', stroke: style.stroke, 'stroke-opacity': 0.0001 }),
-      h('image', { href: staticMixerSvg, x: x - width / 2, y: y - height / 2, width, height, preserveAspectRatio: 'xMidYMid meet', 'pointer-events': 'bounding-box' })
+      h('image', { href: staticMixerSvg, x: x - width / 2, y: y - height / 2, width, height, preserveAspectRatio: 'xMidYMid meet', 'pointer-events': 'bounding-box' }),
     ])
   }
 }
 
-const MechatronicDevices_StaticMixer = {
-  type: 'bpmn:static-mixer',
-  view: StaticMixerView,
-  model: StaticMixerModel,
-}
-
+export default { type: 'bpmn:static-mixer', view: StaticMixerView, model: StaticMixerModel }
 export { StaticMixerView, StaticMixerModel }
-export default MechatronicDevices_StaticMixer

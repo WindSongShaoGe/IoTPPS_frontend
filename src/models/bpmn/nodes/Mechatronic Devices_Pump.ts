@@ -1,12 +1,15 @@
+// src/models/bpmn/nodes/MechatronicDevices_Pump.ts
 import { GraphModel, h, NodeConfig, RectNode, RectNodeModel } from '@logicflow/core'
 import { getBpmnId } from '@logicflow/extension/es/bpmn/getBpmnId'
-
+import type { FieldSchema } from '@/models/bpmn/schemas/commonSchema'
 import pumpSvg from '@/assets/icons/Mechatronic Devices_Pump.svg'
-import { type FieldSchema } from '@/models/bpmn/schemas/commonSchema'
 
-interface PumpProps {
-  deviceName: string
-  deviceNameEn: string
+export interface PumpProps {
+  nameZh: string
+  nameEn: string
+  deviceName?: string
+  deviceNameEn?: string
+
   productModel: string
   installDate: string
   note: string
@@ -20,21 +23,21 @@ interface PumpProps {
 class PumpModel extends RectNodeModel {
   static extendKey = 'PumpModel'
 
-  // ✅ 去掉 disabled，保留字段顺序
   static formSchema: FieldSchema[] = [
-  
     { key: 'productModel', label: '产品型号', type: 'text' },
     { key: 'installDate', label: '安装日期', type: 'date' },
     { key: 'param', label: '参数', type: 'text' },
     { key: 'unit', label: '单位', type: 'text' },
     { key: 'range', label: '设定范围', type: 'text' },
-    { key: 'powerSupply', label: '供电方式', type: 'text' }, // ✅ 挪到接口类型原位置
+    { key: 'powerSupply', label: '供电方式', type: 'text' },
     { key: 'setpoint', label: '设定值', type: 'number' },
-    { key: 'note', label: '备注', type: 'textarea' , placeholder: '请输入备注信息' }
+    { key: 'note', label: '备注', type: 'textarea', placeholder: '请输入备注信息' } as any,
   ]
 
+  declare properties: PumpProps
+
   constructor(data: NodeConfig, graphModel: GraphModel) {
-    if (!data.id) data.id = `Pump_${getBpmnId()}`
+    if (!data.id) data.id = `pump_${getBpmnId()}`
     super(data, graphModel)
     this.width = this.width || 96
     this.height = this.height || 56
@@ -44,8 +47,11 @@ class PumpModel extends RectNodeModel {
   initNodeData(data: any) {
     super.initNodeData(data)
     const defaults: PumpProps = {
+      nameZh: '泵',
+      nameEn: 'Pump',
       deviceName: '泵',
       deviceNameEn: 'Pump',
+
       productModel: 'Grundfos CR5-8',
       installDate: '2024-05-12',
       note: '',
@@ -53,9 +59,37 @@ class PumpModel extends RectNodeModel {
       unit: 'm³/h',
       range: '0～5',
       powerSupply: 'AC',
-      setpoint: 3.5
+      setpoint: 3.5,
     }
-    this.properties = { ...defaults, ...(data.properties || {}) }
+
+    const merged = { ...defaults, ...(data.properties || {}) } as PumpProps
+    if (!merged.nameZh && merged.deviceName) merged.nameZh = String(merged.deviceName)
+    if (!merged.nameEn && merged.deviceNameEn) merged.nameEn = String(merged.deviceNameEn)
+    merged.deviceName = merged.nameZh
+    merged.deviceNameEn = merged.nameEn
+    this.properties = merged
+  }
+
+  setProperties(p: Partial<PumpProps>) {
+    const allowed: Partial<PumpProps> = {}
+
+    if (p.nameZh !== undefined) allowed.nameZh = p.nameZh
+    if (p.nameEn !== undefined) allowed.nameEn = p.nameEn
+    if (p.productModel !== undefined) allowed.productModel = p.productModel
+    if (p.installDate !== undefined) allowed.installDate = p.installDate
+    if (p.note !== undefined) allowed.note = p.note
+    if (p.param !== undefined) allowed.param = p.param
+    if (p.unit !== undefined) allowed.unit = p.unit
+    if (p.range !== undefined) allowed.range = p.range
+    if (p.powerSupply !== undefined) allowed.powerSupply = p.powerSupply
+    if (p.setpoint !== undefined) allowed.setpoint = p.setpoint
+
+    super.setProperties(allowed)
+
+    const next = { ...this.properties, ...allowed } as PumpProps
+    next.deviceName = next.nameZh
+    next.deviceNameEn = next.nameEn
+    this.properties = next
   }
 }
 
@@ -66,6 +100,7 @@ class PumpView extends RectNode {
     const { model } = this.props
     const { x, y, width, height, radius } = model
     const style = model.getNodeStyle()
+
     return h('g', {}, [
       h('rect', {
         x: x - width / 2,
@@ -76,7 +111,7 @@ class PumpView extends RectNode {
         height,
         fill: 'transparent',
         stroke: style.stroke,
-        'stroke-opacity': 0.0001
+        'stroke-opacity': 0.0001,
       }),
       h('image', {
         href: pumpSvg,
@@ -85,17 +120,11 @@ class PumpView extends RectNode {
         width,
         height,
         preserveAspectRatio: 'xMidYMid meet',
-        'pointer-events': 'bounding-box'
-      })
+        'pointer-events': 'bounding-box',
+      }),
     ])
   }
 }
 
-const MechatronicDevices_Pump = {
-  type: 'bpmn:pump',
-  view: PumpView,
-  model: PumpModel
-}
-
+export default { type: 'bpmn:pump', view: PumpView, model: PumpModel }
 export { PumpView, PumpModel }
-export default MechatronicDevices_Pump

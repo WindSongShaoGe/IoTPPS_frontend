@@ -1,18 +1,22 @@
+// src/models/bpmn/nodes/Actuating Devices_Relay.ts
 import { GraphModel, h, NodeConfig, RectNode, RectNodeModel } from '@logicflow/core'
 import { getBpmnId } from '@logicflow/extension/es/bpmn/getBpmnId'
 import relaySvg from '@/assets/icons/Actuating Devices_Relay.svg'
 import { baseFields, actuatingFields, type FieldSchema } from '@/models/bpmn/schemas/commonSchema'
 
 export interface RelayProps {
-  deviceName: string
-  deviceNameEn: string
+  nameZh: string
+  nameEn: string
+  deviceName?: string
+  deviceNameEn?: string
+
   productModel: string
   installDate: string
   note: string
   controlParam: string
   unit: string
   rangeDisplay: string
-  setpoint: string
+  setpoint: '开' | '关'
   interfaceType: string
   powerSupply: string
 }
@@ -22,13 +26,8 @@ class RelayModel extends RectNodeModel {
 
   static formSchema: FieldSchema[] = [
     ...baseFields,
-    // ✅ 去掉通用模板里的 setpoint
-    ...actuatingFields.filter(f => f.key !== 'range' && f.key !== 'setpoint').map(f => {
-      if (f.key === 'interfaceType' || f.key === 'powerSupply') return { ...f }
-      return { ...f, disabled: true, readOnly: true }
-    }),
-    { key: 'rangeDisplay', label: '设定范围', type: 'text' }, // 只显示“无”或“开/关”
-    // ✅ 自定义设定值框，选项改成中文
+    ...actuatingFields.filter(f => f.key !== 'range' && f.key !== 'setpoint'),
+    { key: 'rangeDisplay', label: '设定范围', type: 'text' },
     { key: 'setpoint', label: '设定值（开/关）', type: 'select', options: ['开', '关'] },
     { key: 'note', label: '备注', type: 'textarea', placeholder: '请输入备注信息' },
   ]
@@ -36,7 +35,7 @@ class RelayModel extends RectNodeModel {
   declare properties: RelayProps
 
   constructor(data: NodeConfig, graphModel: GraphModel) {
-    if (!data.id) data.id = `Relay_${getBpmnId()}`
+    if (!data.id) data.id = `relay_${getBpmnId()}`
     super(data, graphModel)
     this.width = this.width || 96
     this.height = this.height || 56
@@ -46,40 +45,59 @@ class RelayModel extends RectNodeModel {
   initNodeData(data: any) {
     super.initNodeData(data)
     const defaults: RelayProps = {
-      deviceName: 'Relay',
+      nameZh: '继电器',
+      nameEn: 'Relay',
+      deviceName: '继电器',
       deviceNameEn: 'Relay',
+
       productModel: 'Omron MY4N',
       installDate: '2024-05-12',
       note: '250V/5A',
       controlParam: '开关',
       unit: 'On/Off',
       rangeDisplay: '开/关',
-      setpoint: '开', // 默认开
+      setpoint: '开',
       interfaceType: 'I/O',
       powerSupply: 'AC/DC',
     }
-    this.properties = { ...defaults, ...(data.properties || {}) }
+
+    const merged = { ...defaults, ...(data.properties || {}) } as RelayProps
+    if (!merged.nameZh && merged.deviceName) merged.nameZh = String(merged.deviceName)
+    if (!merged.nameEn && merged.deviceNameEn) merged.nameEn = String(merged.deviceNameEn)
+
+    merged.rangeDisplay = '开/关'
+    merged.deviceName = merged.nameZh
+    merged.deviceNameEn = merged.nameEn
+    this.properties = merged
   }
 
-  setProperties(props: Partial<RelayProps>) {
+  setProperties(p: Partial<RelayProps>) {
     const allowed: Partial<RelayProps> = {}
-    if (props.productModel !== undefined) allowed.productModel = props.productModel
-    if (props.installDate !== undefined) allowed.installDate = props.installDate
-    if (props.note !== undefined) allowed.note = props.note
-    if (props.setpoint !== undefined) allowed.setpoint = props.setpoint
-    if (props.interfaceType !== undefined) allowed.interfaceType = props.interfaceType
-    if (props.powerSupply !== undefined) allowed.powerSupply = props.powerSupply
-    // 保证 rangeDisplay 不被外部改掉
-    allowed.rangeDisplay = this.properties.rangeDisplay
+
+    if (p.nameZh !== undefined) allowed.nameZh = p.nameZh
+    if (p.nameEn !== undefined) allowed.nameEn = p.nameEn
+
+    if (p.productModel !== undefined) allowed.productModel = p.productModel
+    if (p.installDate !== undefined) allowed.installDate = p.installDate
+    if (p.note !== undefined) allowed.note = p.note
+    if (p.setpoint !== undefined) allowed.setpoint = p.setpoint
+    if (p.interfaceType !== undefined) allowed.interfaceType = p.interfaceType
+    if (p.powerSupply !== undefined) allowed.powerSupply = p.powerSupply
+
+    // 固定展示字段
+    allowed.rangeDisplay = '开/关'
 
     super.setProperties(allowed)
-    this.properties = { ...this.properties, ...allowed }
+
+    const next = { ...this.properties, ...allowed } as RelayProps
+    next.deviceName = next.nameZh
+    next.deviceNameEn = next.nameEn
+    this.properties = next
   }
 }
 
 class RelayView extends RectNode {
   static extendKey = 'RelayNode'
-
   getShape(): any {
     const { model } = this.props
     const { x, y, width, height, radius } = model

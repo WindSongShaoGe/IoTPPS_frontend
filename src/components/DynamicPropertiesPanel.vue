@@ -61,11 +61,23 @@
           <div v-else-if="f.type==='range'" class="form-item form-item--full">
             <label>{{ f.label }}</label>
             <div class="range">
-              <input class="ipt" type="number" :step="f.step || 1"
-                     v-model.number="rangeCache[f.minKey!]" @change="commitRange(f)" placeholder="最小值" />
+              <input
+                class="ipt"
+                type="number"
+                :step="f.step || 1"
+                v-model.number="rangeCache[f.minKey!]"
+                @change="commitRange(f)"
+                placeholder="最小值"
+              />
               <span class="range__sep">~</span>
-              <input class="ipt" type="number" :step="f.step || 1"
-                     v-model.number="rangeCache[f.maxKey!]" @change="commitRange(f)" placeholder="最大值" />
+              <input
+                class="ipt"
+                type="number"
+                :step="f.step || 1"
+                v-model.number="rangeCache[f.maxKey!]"
+                @change="commitRange(f)"
+                placeholder="最大值"
+              />
             </div>
           </div>
         </template>
@@ -138,7 +150,7 @@ const DEVICE_MAP: Record<string, {nameZh:string, nameEn:string, categoryZh:strin
   'Sensing Devices_ Conductivity Analyzer': { nameZh:'电导率分析仪', nameEn:'Conductivity Analyzer', categoryZh:'感知类设备', categoryEn:'Sensing Devices' },
   'Sensing Devices_Differential Pressure Indicating Transmitter': { nameZh:'差压指示变送器', nameEn:'Differential Pressure Indicating Transmitter', categoryZh:'感知类设备', categoryEn:'Sensing Devices' },
   'Sensing Devices_Flow Transmitter': { nameZh:'流量变送器', nameEn:'Flow Transmitter', categoryZh:'感知类设备', categoryEn:'Sensing Devices' },
-  'Sensing Devices_Hardness Meter of Water': { nameZh:'水硬度计', nameEn:'Hardness Meter of water', categoryZh:'感知类设备', categoryEn:'Sensing Devices' },
+  'Sensing Devices_Hardness Meter of Water': { nameZh:'水硬度计', nameEn:'Hardness Meter of Water', categoryZh:'感知类设备', categoryEn:'Sensing Devices' },
   'Sensing Devices_Level Transmitter': { nameZh:'液位变送器', nameEn:'Level Transmitter', categoryZh:'感知类设备', categoryEn:'Sensing Devices' },
   'Sensing Devices_ORP Analyzer': { nameZh:'氧化还原电位分析仪', nameEn:'ORP Analyzer', categoryZh:'感知类设备', categoryEn:'Sensing Devices' },
   'Sensing Devices_PH Analyzer': { nameZh:'pH分析仪', nameEn:'pH Analyzer', categoryZh:'感知类设备', categoryEn:'Sensing Devices' },
@@ -150,38 +162,106 @@ const DEVICE_MAP: Record<string, {nameZh:string, nameEn:string, categoryZh:strin
   'UserTask': { nameZh:'用户任务', nameEn:'User Task', categoryZh:'BPMN', categoryEn:'BPMN' },
 }
 
-/** type → 文件名 的别名（若你的 model.type 用 bpmn:xxx） */
+/** type → 文件名 的别名（统一支持：kebab-case + 旧 camelCase 兼容） */
 const TYPE_ALIAS: Record<string, string> = {
+  // ===== Mechatronic =====
   'bpmn:pump': 'Mechatronic Devices_Pump',
-  'bpmn:dosingPump': 'Mechatronic Devices_Dosing Pump',
+
+  'bpmn:backwash-pump': 'Mechatronic Devices_Backwash Pump',
   'bpmn:backwashPump': 'Mechatronic Devices_Backwash Pump',
+
+  'bpmn:dosing-pump': 'Mechatronic Devices_Dosing Pump',
+  'bpmn:dosingPump': 'Mechatronic Devices_Dosing Pump',
+
   'bpmn:mixer': 'Mechatronic Devices_Mixer',
+
+  'bpmn:static-mixer': 'Mechatronic Devices_Static Mixer',
   'bpmn:staticMixer': 'Mechatronic Devices_Static Mixer',
+
+  'bpmn:motorized-valve': 'Mechatronic Devices_Motorized Valve',
   'bpmn:motorizedValve': 'Mechatronic Devices_Motorized Valve',
+
+  'bpmn:reverse-osmosis-unit': 'Mechatronic Devices_Reverse Osmosis Unit',
   'bpmn:roUnit': 'Mechatronic Devices_Reverse Osmosis Unit',
+
+  'bpmn:uf-unit': 'Mechatronic Devices_Ultrafiltration Unit',
   'bpmn:ufUnit': 'Mechatronic Devices_Ultrafiltration Unit',
+
+  'bpmn:dechlorination-unit': 'Mechatronic Devices_Ultraviolet Dechlorination',
   'bpmn:uvDechlorination': 'Mechatronic Devices_Ultraviolet Dechlorination',
+
+  'bpmn:water-tank': 'Mechatronic Devices_Water Tank',
   'bpmn:waterTank': 'Mechatronic Devices_Water Tank',
+
+  'bpmn:water-pipeline': 'Mechatronic Devices_Water Pipeline',
   'bpmn:pipeline': 'Mechatronic Devices_Water Pipeline',
 
+  'bpmn:cartridge-filter': 'Mechatronic Devices_Cartridge Filter',
+  'bpmn:chemical-tank': 'Mechatronic Devices_Chemical Dosing Tank',
+
+  // ===== Control =====
   'bpmn:plc': 'Control Devices_PLC',
+
+  'bpmn:chemical-dosing-controller': 'Control Devices_Chemical Dosing Controller',
+  'bpmn:chemicalDosingController': 'Control Devices_Chemical Dosing Controller',
   'bpmn:dosingController': 'Control Devices_Chemical Dosing Controller',
+
+  'bpmn:differential-pressure-controller': 'Control Devices_Differential Pressure Controller',
+  'bpmn:differentialPressureController': 'Control Devices_Differential Pressure Controller',
   'bpmn:dpController': 'Control Devices_Differential Pressure Controller',
+
+  'bpmn:data-logger': 'Control Devices_Data Logger',
   'bpmn:dataLogger': 'Control Devices_Data Logger',
 
+  // ===== Actuating =====
   'bpmn:motor': 'Actuating Devices_Motor',
   'bpmn:relay': 'Actuating Devices_Relay',
+  'bpmn:solenoid-valve': 'Actuating Devices_Solenoid Valve',
   'bpmn:solenoidValve': 'Actuating Devices_Solenoid Valve',
 
-  'bpmn:phAnalyzer': 'Sensing Devices_PH Analyzer',
-  'bpmn:orpAnalyzer': 'Sensing Devices_ORP Analyzer',
+  // ===== Sensing =====
+  'bpmn:conductivity-analyzer': 'Sensing Devices_Conductivity Analyzer',
   'bpmn:conductivityAnalyzer': 'Sensing Devices_Conductivity Analyzer',
+
+  'bpmn:orp-analyzer': 'Sensing Devices_ORP Analyzer',
+  'bpmn:orpAnalyzer': 'Sensing Devices_ORP Analyzer',
+
+  'bpmn:hardness-meter': 'Sensing Devices_Hardness Meter of Water',
   'bpmn:hardnessMeter': 'Sensing Devices_Hardness Meter of Water',
+
+  'bpmn:ph-analyzer': 'Sensing Devices_PH Analyzer',
+  'bpmn:phAnalyzer': 'Sensing Devices_PH Analyzer',
+
+  'bpmn:flow-transmitter': 'Sensing Devices_Flow Transmitter',
   'bpmn:flowTransmitter': 'Sensing Devices_Flow Transmitter',
+
+  'bpmn:level-transmitter': 'Sensing Devices_Level Transmitter',
   'bpmn:levelTransmitter': 'Sensing Devices_Level Transmitter',
+
+  'bpmn:pressure-meter': 'Sensing Devices_Pressure Meter',
   'bpmn:pressureMeter': 'Sensing Devices_Pressure Meter',
+
+  'bpmn:differential-pressure-transmitter': 'Sensing Devices_Differential Pressure Indicating Transmitter',
+  'bpmn:differentialPressureTransmitter': 'Sensing Devices_Differential Pressure Indicating Transmitter',
   'bpmn:dpit': 'Sensing Devices_Differential Pressure Indicating Transmitter',
 
+  // ===== Communication =====
+  'bpmn:protocol-module': 'Communication Devices_Communication Protocol Module',
+  'bpmn:protocolModule': 'Communication Devices_Communication Protocol Module',
+
+  'bpmn:dtu-gateway': 'Communication Devices_Data Transmission Unit',
+  'bpmn:dtuGateway': 'Communication Devices_Data Transmission Unit',
+
+  'bpmn:wireless-module': 'Communication Devices_Wireless Communication Module',
+  'bpmn:wirelessModule': 'Communication Devices_Wireless Communication Module',
+
+  // ===== Cloud =====
+  'bpmn:cloud-database': 'Cloud Serve_Cloud Database',
+  'bpmn:data-visualization-platform': 'Cloud Server_Data Visualization Platform',
+  'bpmn:intelligent-analytics-module': 'Cloud Server_Intelligent Analytics Module',
+  'bpmn:remote-console': 'Cloud Server_Remote Console',
+
+  // ===== BPMN =====
   'bpmn:endEvent': 'EndEvent',
   'bpmn:serviceTask': 'ServiceTask',
   'bpmn:userTask': 'UserTask',
@@ -224,7 +304,7 @@ const NAME_ALIAS_TO_KEY: Record<string, string> = {
   [norm('Data Logger')]: 'Control Devices_Data Logger',
   '数据记录器': 'Control Devices_Data Logger',
 
-  // 机电（含你点名的）
+  // 机电
   [norm('Pump')]: 'Mechatronic Devices_Pump',
   '泵': 'Mechatronic Devices_Pump',
 
@@ -250,7 +330,7 @@ const NAME_ALIAS_TO_KEY: Record<string, string> = {
   [norm('Chemical Tank')]: 'Mechatronic Devices_Chemical Dosing Tank',
   '药剂罐': 'Mechatronic Devices_Chemical Dosing Tank',
 
-  // 感知（截断 Tran 也能中）
+  // 感知
   [norm('Differential Pressure Indicating Transmitter')]: 'Sensing Devices_Differential Pressure Indicating Transmitter',
   [norm('Differential Pressure Transmitter')]: 'Sensing Devices_Differential Pressure Indicating Transmitter',
   [norm('Differential Pressure Tran')]: 'Sensing Devices_Differential Pressure Indicating Transmitter',
@@ -259,7 +339,7 @@ const NAME_ALIAS_TO_KEY: Record<string, string> = {
   [norm('Flow Transmitter')]: 'Sensing Devices_Flow Transmitter',
   '流量变送器': 'Sensing Devices_Flow Transmitter',
 
-  // 云服务器类（你点名的）
+  // 云服务器类
   [norm('Cloud Database')]: 'Cloud Serve_Cloud Database',
   '云数据库': 'Cloud Serve_Cloud Database',
 
@@ -277,8 +357,9 @@ const NAME_ALIAS_TO_KEY: Record<string, string> = {
 function getDeviceNameFromProps(p: Record<string, any>) {
   if (!p) return { nameZh: '', nameEn: '' }
 
-  const preferZh = ['设备名称', 'deviceNameZh', 'deviceZh', 'cnName', 'devNameZh']
-  const preferEn = ['Device Name', 'deviceName', 'device_en', 'devName', 'nameEn', 'enName']
+  // ★ 关键：把 palette-data.ts 里塞的 deviceName / deviceNameEn 也识别进来
+  const preferZh = ['nameZh', '设备名称', 'deviceName', 'deviceNameZh', 'deviceZh', 'cnName', 'devNameZh']
+  const preferEn = ['nameEn', 'deviceNameEn', 'Device Name', 'device_en', 'devName', 'enName']
 
   let nameZh = preferZh.map(k => p[k]).find(v => typeof v === 'string' && v.trim()) || ''
   let nameEn = preferEn.map(k => p[k]).find(v => typeof v === 'string' && v.trim()) || ''
@@ -338,9 +419,10 @@ function deriveKey(model: any, p: Record<string, any>) {
   const explicit = p.fileName || p.nodeKey || p.titleKey
   if (explicit && DEVICE_MAP[explicit]) return explicit as string
 
-  // 2) type 别名
+  // 2) type 别名（支持 kebab-case）
   if (model?.type && TYPE_ALIAS[model.type]) {
-    const k = TYPE_ALIAS[model.type]; if (DEVICE_MAP[k]) return k
+    const k = TYPE_ALIAS[model.type]
+    if (DEVICE_MAP[k]) return k
   }
 
   // 3) icon 文件名
@@ -359,7 +441,6 @@ function deriveKey(model: any, p: Record<string, any>) {
 }
 
 /** 抬头信息（名称以“设备名称”为准；类别由映射推断，英文名自动校正） */
-/** 抬头信息（名称以“设备名称”为准；类别由映射推断，英文名自动校正） */
 const titleInfo = computed(() => {
   if (!props.selectedId) return { nameZh:'', nameEn:'', categoryZh:'', categoryEn:'' }
   const model = props.lf.getNodeModelById(props.selectedId)
@@ -374,7 +455,7 @@ const titleInfo = computed(() => {
   let categoryZh = p.categoryZh || ''
   let categoryEn = p.categoryEn || ''
 
-  // ★ 关键：英文名为空 / 含中文 / 与中文规范化相等，都需要取映射做纠正
+  // ★ 英文名为空 / 含中文 / 与中文规范化相等 → 取映射纠正
   const needDict =
     !categoryZh || !categoryEn || !nameEn || hasChinese(nameEn) || sameLoose(nameEn, nameZh)
 
@@ -388,14 +469,12 @@ const titleInfo = computed(() => {
     }
   }
 
-  // ★ 纠正英文名：用映射英文名覆盖异常情况
   if (dict && (!nameEn || hasChinese(nameEn) || sameLoose(nameEn, nameZh))) {
     nameEn = dict.nameEn
   }
 
   return { nameZh, nameEn, categoryZh, categoryEn }
 })
-
 
 /** 自动写回（不覆盖用户已填；画布文字始终隐藏；英文名自动校正） */
 function autoFill(nodeId: string) {
@@ -459,14 +538,14 @@ watch(() => props.selectedId, () => {
 /** 新拖入节点：立即自动填充并隐藏文字 */
 function onNodeAdd({ data }: any) { if (data?.id) autoFill(data.id) }
 onMounted(() => { props.lf?.on?.('node:add', onNodeAdd) })
-onBeforeUnmount(() => { props.lf?.off?.('node:add', onNodeAdd) })
+onBeforeUnmount(() => { props.lf?.off?.('node:add', onNodeAdd) }),
 
-/** 名称输入：仅更新 properties，不写画布文本 */
-function onNameInput() {
-  if (!props.selectedId) return
-  props.lf.setProperties(props.selectedId, { nameZh: base.name || '' })
-  if (!SHOW_TEXT_ON_CANVAS) props.lf.updateText(props.selectedId, '')
-}
+  /** 名称输入：仅更新 properties，不写画布文本 */
+  function onNameInput() {
+    if (!props.selectedId) return
+    props.lf.setProperties(props.selectedId, { nameZh: base.name || '' })
+    if (!SHOW_TEXT_ON_CANVAS) props.lf.updateText(props.selectedId, '')
+  }
 
 /** 提交辅助 */
 function commit(patch: Record<string, any>) {

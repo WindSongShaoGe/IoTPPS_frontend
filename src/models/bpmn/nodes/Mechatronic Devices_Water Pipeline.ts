@@ -1,28 +1,28 @@
+// src/models/bpmn/nodes/MechatronicDevices_WaterPipeline.ts
 import { GraphModel, h, NodeConfig, RectNode, RectNodeModel } from '@logicflow/core'
 import { getBpmnId } from '@logicflow/extension/es/bpmn/getBpmnId'
-
-import waterPipelineSvg from '@/assets/icons/Mechatronic Devices_Water Pipeline.svg'
 import type { FieldSchema } from '@/models/bpmn/schemas/commonSchema'
+import waterPipelineSvg from '@/assets/icons/Mechatronic Devices_Water Pipeline.svg'
 
-// —— 水管道属性接口 —— //
-interface PipelineProps {
-  deviceName: string
-  deviceNameEn: string
+export interface PipelineProps {
+  nameZh: string
+  nameEn: string
+  deviceName?: string
+  deviceNameEn?: string
+
   productModel: string
   installDate: string
   note: string
-
   controlParam: string
   unit: string
   range: string
   powerSupply: string
-  setpoint: number | null     // ✅ 新增设定值字段
+  setpoint: number | null
 }
 
 class WaterPipelineModel extends RectNodeModel {
   static extendKey = 'WaterPipelineModel'
 
-  // ✅ 手动声明 schema，新增设定值框
   static formSchema: FieldSchema[] = [
     { key: 'productModel', label: '产品型号', type: 'text' },
     { key: 'installDate', label: '安装日期', type: 'date' },
@@ -30,12 +30,14 @@ class WaterPipelineModel extends RectNodeModel {
     { key: 'unit', label: '单位', type: 'text' },
     { key: 'range', label: '设定范围', type: 'text' },
     { key: 'powerSupply', label: '供电方式', type: 'text' },
-    { key: 'setpoint', label: '设定值 (mm)', type: 'number', step: 1 }, // ✅ 新增输入框
-    { key: 'note', label: '备注', type: 'textarea', placeholder: '请输入备注信息'  },
+    { key: 'setpoint', label: '设定值 (mm)', type: 'number', step: 1 } as any,
+    { key: 'note', label: '备注', type: 'textarea', placeholder: '请输入备注信息' } as any,
   ]
 
+  declare properties: PipelineProps
+
   constructor(data: NodeConfig, graphModel: GraphModel) {
-    if (!data.id) data.id = `WaterPipeline_${getBpmnId()}`
+    if (!data.id) data.id = `water-pipeline_${getBpmnId()}`
     super(data, graphModel)
 
     this.width = this.width || 96
@@ -46,26 +48,46 @@ class WaterPipelineModel extends RectNodeModel {
   initNodeData(data: any) {
     super.initNodeData(data)
     const defaults: PipelineProps = {
+      nameZh: '水管道',
+      nameEn: 'Pipeline',
       deviceName: '水管道',
       deviceNameEn: 'Pipeline',
+
       productModel: 'DN32不锈钢',
       installDate: '2024-05-12',
       note: '',
       controlParam: '直径',
       unit: 'mm',
-      range: '固定', // 固定显示
+      range: '固定',
       powerSupply: '无',
-      setpoint: 32
+      setpoint: 32,
     }
-    this.properties = { ...defaults, ...(data.properties || {}) }
+
+    const merged = { ...defaults, ...(data.properties || {}) } as PipelineProps
+    if (!merged.nameZh && merged.deviceName) merged.nameZh = String(merged.deviceName)
+    if (!merged.nameEn && merged.deviceNameEn) merged.nameEn = String(merged.deviceNameEn)
+    merged.deviceName = merged.nameZh
+    merged.deviceNameEn = merged.nameEn
+    this.properties = merged
   }
 
-  // ✅ 拦截修改，防止 range 被改掉
-  setProperties(properties: Partial<PipelineProps>) {
-    if (properties.range) {
-      properties.range = '无'
-    }
-    super.setProperties(properties)
+  setProperties(p: Partial<PipelineProps>) {
+    const allowed: Partial<PipelineProps> = {}
+    if (p.nameZh !== undefined) allowed.nameZh = p.nameZh
+    if (p.nameEn !== undefined) allowed.nameEn = p.nameEn
+    if (p.productModel !== undefined) allowed.productModel = p.productModel
+    if (p.installDate !== undefined) allowed.installDate = p.installDate
+    if (p.note !== undefined) allowed.note = p.note
+    if (p.powerSupply !== undefined) allowed.powerSupply = p.powerSupply
+    if (p.setpoint !== undefined) allowed.setpoint = p.setpoint
+
+    // 🔒 range / controlParam / unit 固定
+    super.setProperties(allowed)
+
+    const next = { ...this.properties, ...allowed } as PipelineProps
+    next.deviceName = next.nameZh
+    next.deviceNameEn = next.nameEn
+    this.properties = next
   }
 }
 
@@ -78,32 +100,11 @@ class WaterPipelineView extends RectNode {
     const style = model.getNodeStyle()
 
     return h('g', {}, [
-      h('rect', {
-        x: x - width / 2,
-        y: y - height / 2,
-        rx: radius, ry: radius,
-        width, height,
-        fill: 'transparent',
-        stroke: style.stroke,
-        'stroke-opacity': 0.0001
-      }),
-      h('image', {
-        href: waterPipelineSvg,
-        x: x - width / 2,
-        y: y - height / 2,
-        width, height,
-        preserveAspectRatio: 'xMidYMid meet',
-        'pointer-events': 'bounding-box'
-      })
+      h('rect', { x: x - width / 2, y: y - height / 2, rx: radius, ry: radius, width, height, fill: 'transparent', stroke: style.stroke, 'stroke-opacity': 0.0001 }),
+      h('image', { href: waterPipelineSvg, x: x - width / 2, y: y - height / 2, width, height, preserveAspectRatio: 'xMidYMid meet', 'pointer-events': 'bounding-box' }),
     ])
   }
 }
 
-const MechatronicDevices_WaterPipeline = {
-  type: 'bpmn:water-pipeline',
-  view: WaterPipelineView,
-  model: WaterPipelineModel,
-}
-
+export default { type: 'bpmn:water-pipeline', view: WaterPipelineView, model: WaterPipelineModel }
 export { WaterPipelineView, WaterPipelineModel }
-export default MechatronicDevices_WaterPipeline

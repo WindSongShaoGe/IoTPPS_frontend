@@ -1,39 +1,50 @@
-// src/models/bpmn/nodes/ActuatingDevices_SolenoidValve.ts
+// src/models/bpmn/nodes/Actuating Devices_Solenoid Valve.ts
 import { GraphModel, h, NodeConfig, RectNode, RectNodeModel } from '@logicflow/core'
 import { getBpmnId } from '@logicflow/extension/es/bpmn/getBpmnId'
 import valveSvg from '@/assets/icons/Actuating Devices_Solenoid Valve.svg'
 import { baseFields, actuatingFields, type FieldSchema } from '@/models/bpmn/schemas/commonSchema'
 
-// —— 电磁阀节点的属性类型 —— //
 export interface SolenoidValveProps {
-  deviceName: string
-  deviceNameEn: string
+  nameZh: string
+  nameEn: string
+  deviceName?: string
+  deviceNameEn?: string
+
   productModel: string
   installDate: string
   note: string
   controlParam: string
   unit: string
-  range: { min: number; max: number }   // ✅ 保留原来的两个范围框
-  setpoint: number | null               // 设定值
+
+  range: { min: number | null; max: number | null }
+  setpoint: number | null
+
   interfaceType: string
   powerSupply: string
+}
+
+function numOrNull(v: any): number | null {
+  const n = Number(v)
+  return Number.isFinite(n) ? n : null
+}
+function clamp(n: number, min: number, max: number) {
+  return Math.max(min, Math.min(max, n))
 }
 
 class SolenoidValveModel extends RectNodeModel {
   static extendKey = 'SolenoidValveModel'
 
   static formSchema: FieldSchema[] = [
-  ...baseFields,
-  // 过滤掉默认的 setpoint 字段
-  ...actuatingFields.filter(field => field.key !== 'setpoint'),
-  // 重新定义 setpoint 并放在你想要的位置
-  { key: 'setpoint', label: '设定值 (%)', type: 'number', step: 1 },
-  { key: 'note', label: '备注', type: 'textarea' }
-]
+    ...baseFields,
+    ...actuatingFields.filter(f => f.key !== 'setpoint'),
+    { key: 'setpoint', label: '设定值 (%)', type: 'number', step: 1 },
+    { key: 'note', label: '备注', type: 'textarea', placeholder: '请输入备注信息' },
+  ]
 
+  declare properties: SolenoidValveProps
 
   constructor(data: NodeConfig, graphModel: GraphModel) {
-    if (!data.id) data.id = `SOLENOID_VALVE_${getBpmnId()}`
+    if (!data.id) data.id = `solenoid-valve_${getBpmnId()}`
     super(data, graphModel)
     this.width = this.width || 96
     this.height = this.height || 56
@@ -43,40 +54,89 @@ class SolenoidValveModel extends RectNodeModel {
   initNodeData(data: any) {
     super.initNodeData(data)
     const defaults: SolenoidValveProps = {
-      deviceName: 'Solenoid Valve',
+      nameZh: '电磁阀',
+      nameEn: 'Solenoid Valve',
+      deviceName: '电磁阀',
       deviceNameEn: 'Solenoid Valve',
+
       productModel: 'ASCO 210',
       installDate: '2024-05-12',
       note: '常闭型,24V线圈',
       controlParam: '阀门开度',
       unit: '%',
-      range: { min: 0, max: 100 },  // ✅ 保留范围
+
+      range: { min: 0, max: 100 },
       setpoint: 65,
+
       interfaceType: 'I/O',
       powerSupply: 'AC/DC',
     }
-    this.properties = { ...defaults, ...(data.properties || {}) }
-  }
 
-  /** 设定值处理：确保数值在 0-100 范围内 */
-  setProperties(patch: Partial<SolenoidValveProps>) {
-    const curr = (this.properties || {}) as SolenoidValveProps
-    const next: SolenoidValveProps = { ...curr, ...patch }
+    const merged = { ...defaults, ...(data.properties || {}) } as SolenoidValveProps
+    if (!merged.nameZh && merged.deviceName) merged.nameZh = String(merged.deviceName)
+    if (!merged.nameEn && merged.deviceNameEn) merged.nameEn = String(merged.deviceNameEn)
 
-    if (next.setpoint !== null) {
-      let n = Number(next.setpoint)
-      if (!Number.isFinite(n)) n = curr.setpoint ?? 0
-      n = Math.max(this.properties.range.min, Math.min(this.properties.range.max, n))
-      next.setpoint = n
+    // range 安全兜底
+    merged.range ||= { min: 0, max: 100 }
+    merged.range.min = numOrNull(merged.range.min) ?? 0
+    merged.range.max = numOrNull(merged.range.max) ?? 100
+
+    // setpoint 兜底并夹紧
+    if (merged.setpoint != null) {
+      const n = numOrNull(merged.setpoint)
+      merged.setpoint = n == null ? null : clamp(n, merged.range.min ?? 0, merged.range.max ?? 100)
     }
 
-    super.setProperties(next)
+    merged.deviceName = merged.nameZh
+    merged.deviceNameEn = merged.nameEn
+    this.properties = merged
+  }
+
+  setProperties(p: Partial<SolenoidValveProps>) {
+    const cur = (this.properties || {}) as SolenoidValveProps
+    const allowed: Partial<SolenoidValveProps> = {}
+
+    if (p.nameZh !== undefined) allowed.nameZh = p.nameZh
+    if (p.nameEn !== undefined) allowed.nameEn = p.nameEn
+
+    if (p.productModel !== undefined) allowed.productModel = p.productModel
+    if (p.installDate !== undefined) allowed.installDate = p.installDate
+    if (p.note !== undefined) allowed.note = p.note
+    if (p.interfaceType !== undefined) allowed.interfaceType = p.interfaceType
+    if (p.powerSupply !== undefined) allowed.powerSupply = p.powerSupply
+
+    // range（来自 commitRange）
+    let nextRange = cur.range || { min: 0, max: 100 }
+    if (p.range !== undefined) {
+      const min = numOrNull((p.range as any)?.min)
+      const max = numOrNull((p.range as any)?.max)
+      nextRange = { min, max }
+      allowed.range = nextRange
+    }
+
+    // setpoint：按 nextRange 夹紧
+    if (p.setpoint !== undefined) {
+      const n = numOrNull(p.setpoint)
+      if (n == null) {
+        allowed.setpoint = null
+      } else {
+        const rMin = nextRange.min ?? 0
+        const rMax = nextRange.max ?? 100
+        allowed.setpoint = clamp(n, rMin, rMax)
+      }
+    }
+
+    super.setProperties(allowed)
+
+    const next = { ...cur, ...allowed } as SolenoidValveProps
+    next.deviceName = next.nameZh
+    next.deviceNameEn = next.nameEn
+    this.properties = next
   }
 }
 
 class SolenoidValveView extends RectNode {
   static extendKey = 'SolenoidValveNode'
-
   getShape(): any {
     const { model } = this.props
     const { x, y, width, height, radius } = model
@@ -106,11 +166,5 @@ class SolenoidValveView extends RectNode {
   }
 }
 
-const ActuatingDevices_SolenoidValve = {
-  type: 'bpmn:solenoidValve',
-  view: SolenoidValveView,
-  model: SolenoidValveModel,
-}
-
+export default { type: 'bpmn:solenoid-valve', view: SolenoidValveView, model: SolenoidValveModel }
 export { SolenoidValveView, SolenoidValveModel }
-export default ActuatingDevices_SolenoidValve

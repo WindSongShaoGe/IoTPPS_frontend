@@ -2,11 +2,8 @@
 import { GraphModel, h, NodeConfig, RectNode, RectNodeModel } from '@logicflow/core'
 import { getBpmnId } from '@logicflow/extension/es/bpmn/getBpmnId'
 import { baseFields, sensingFields, type FieldSchema } from '@/models/bpmn/schemas/commonSchema'
-
-// ✅ 图标路径改成无空格文件名，放 assets/icons
 import orpSvg from '@/assets/icons/Sensing Devices_ORP Analyzer.svg'
 
-// 属性接口
 interface ORPProps {
   deviceName: string
   productModel: string
@@ -26,7 +23,6 @@ interface ORPProps {
   setpoint: number | null
 }
 
-// 模型
 class ORPModel extends RectNodeModel {
   static extendKey = 'ORPModel'
 
@@ -49,8 +45,7 @@ class ORPModel extends RectNodeModel {
       }
       return field
     }),
-      { key: 'note', label: '备注', type: 'textarea', placeholder: '请输入备注信息' }
-
+    { key: 'note', label: '备注', type: 'textarea', placeholder: '请输入备注信息' }
   ]
 
   declare properties: ORPProps
@@ -64,31 +59,35 @@ class ORPModel extends RectNodeModel {
     this.properties = this.getInitialProperties(data.properties as Partial<ORPProps> | undefined)
   }
 
-  setProperties(properties: Partial<ORPProps>): void {
+  setProperties(patch: Partial<ORPProps>): void {
     const allowed: Partial<ORPProps> = {}
 
-    if (properties.productModel !== undefined) allowed.productModel = properties.productModel
-    if (properties.installDate !== undefined) allowed.installDate = properties.installDate
-    if (properties.note !== undefined) allowed.note = properties.note
-    if (properties.value !== undefined) allowed.value = properties.value
-    if (properties.setpoint !== undefined) allowed.setpoint = properties.setpoint
+    if (patch.productModel !== undefined) allowed.productModel = patch.productModel
+    if (patch.installDate !== undefined) allowed.installDate = patch.installDate
+    if (patch.note !== undefined) allowed.note = patch.note
+    if (patch.value !== undefined) allowed.value = patch.value
+    if (patch.setpoint !== undefined) allowed.setpoint = patch.setpoint
 
-    if (properties.range) {
-      const newMin = properties.range.min ?? this.properties.range.min
-      const newMax = properties.range.max ?? this.properties.range.max
+    // range：允许编辑 min/max（ORP 允许负数，只校验 min ≤ max）
+    if (patch.range) {
+      const newMin = patch.range.min ?? this.properties.range.min
+      const newMax = patch.range.max ?? this.properties.range.max
       if (newMin <= newMax) {
         allowed.range = { ...this.properties.range, min: newMin, max: newMax, unit: this.properties.range.unit }
       }
     }
 
-    let alarmLow = properties.alarmLow ?? this.properties.alarmLow
-    let alarmHigh = properties.alarmHigh ?? this.properties.alarmHigh
-    if (alarmLow !== null && alarmHigh !== null && alarmLow > alarmHigh) {
-      alarmLow = this.properties.alarmLow
-      alarmHigh = this.properties.alarmHigh
+    // 报警上下限：low ≤ high
+    const hasLow = patch.alarmLow !== undefined
+    const hasHigh = patch.alarmHigh !== undefined
+    if (hasLow || hasHigh) {
+      const nextLow = hasLow ? patch.alarmLow : this.properties.alarmLow
+      const nextHigh = hasHigh ? patch.alarmHigh : this.properties.alarmHigh
+      if (!(nextLow !== null && nextHigh !== null && nextLow > nextHigh)) {
+        if (hasLow) allowed.alarmLow = patch.alarmLow!
+        if (hasHigh) allowed.alarmHigh = patch.alarmHigh!
+      }
     }
-    allowed.alarmLow = alarmLow
-    allowed.alarmHigh = alarmHigh
 
     super.setProperties(allowed)
     this.properties = { ...this.properties, ...allowed }
@@ -130,7 +129,6 @@ class ORPModel extends RectNodeModel {
   }
 }
 
-// 视图
 class ORPView extends RectNode {
   static extendKey = 'ORPNode'
 
@@ -139,7 +137,6 @@ class ORPView extends RectNode {
     const style = this.props.model.getNodeStyle()
 
     return h('g', {}, [
-      // 命中区
       h('rect', {
         x: x - width / 2,
         y: y - height / 2,
@@ -152,7 +149,6 @@ class ORPView extends RectNode {
         'stroke-opacity': 0.0001,
         'pointer-events': 'all'
       }),
-      // 图标
       h('image', {
         href: orpSvg,
         x: x - width / 2,
@@ -167,7 +163,7 @@ class ORPView extends RectNode {
 }
 
 export default {
-  type: 'bpmn:orpAnalyzer',
+  type: 'bpmn:orp-analyzer',
   view: ORPView,
   model: ORPModel
 }

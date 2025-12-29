@@ -52,6 +52,7 @@ import PressureMeter from './bpmn/nodes/Sensing Devices_Pressure Meter'
 import ServiceTask from './bpmn/nodes/ServiceTask'
 import UserTask from './bpmn/nodes/UserTask'
 import { wrapNodeWithValuePeek } from './bpmn/value-peek'
+import { normalizeType } from './bpmn/type-compat'
 
 import nodeRedModel from './node-red/model'
 
@@ -99,7 +100,17 @@ export const nodeDefs = [
   CustomImageNode,
 ]
 
-export const nodeDefsWithPeek = nodeDefs.map(wrapNodeWithValuePeek)
+/** 让注册层也兼容旧 type：避免“节点注册 type 还是旧的，但模型里已经是新的” */
+function normalizeNodeDefType<T extends Record<string, any>>(def: T): T {
+  if (!def) return def
+  const t = normalizeType(def.type)
+  return t && t !== def.type ? ({ ...def, type: t } as T) : def
+}
+
+export const nodeDefsWithPeek = nodeDefs
+  .map(normalizeNodeDefType)
+  .map(wrapNodeWithValuePeek)
+  .map(normalizeNodeDefType)
 
 // 默认导出：供 useModeler 使用的模型清单
 const models: ModelType[] = [bpmnModel, nodeRedModel]

@@ -11,13 +11,16 @@ interface ConductivityProps {
   note: string
   param: string
   unit: string
-  /** ✅ 新增：拼接好的测量范围文本，而不是 min/max 两个输入框 */
+
+  // ✅ 用拼接后的范围文本替代 range.min/max/unit
   rangeDisplay: string
+
   accuracy: string
   sampleFreq: number
   interfaceType: string
   commMethod: string
   powerSupply: string
+
   value: number | null
   alarmLow: number | null
   alarmHigh: number | null
@@ -29,9 +32,9 @@ class ConductivityModel extends RectNodeModel {
 
   static formSchema: FieldSchema[] = [
     ...baseFields,
-    // ✅ 过滤掉原来的 range 字段
+    // ✅ 彻底过滤掉 range.* 三个字段
     ...sensingFields
-      .filter(field => field.key !== 'range')
+      .filter(field => !field.key.startsWith('range'))
       .map(field => {
         const immutableFields = [
           'deviceName',
@@ -48,9 +51,8 @@ class ConductivityModel extends RectNodeModel {
         }
         return field
       }),
-    // ✅ 用一个只读文本框显示拼接后的范围
-    { key: 'rangeDisplay', label: '测量范围', type: 'text', placeholder: '0.01～400 mS/cm' },
-    // ✅ 新增：更大的备注框
+    // ✅ 只读显示范围
+    { key: 'rangeDisplay', label: '测量范围', type: 'text', disabled: true, readOnly: true },
     { key: 'note', label: '备注', type: 'textarea', placeholder: '请输入备注信息' }
   ]
 
@@ -65,22 +67,30 @@ class ConductivityModel extends RectNodeModel {
     this.properties = this.getInitialProperties(data.properties as Partial<ConductivityProps> | undefined)
   }
 
-  setProperties(properties: Partial<ConductivityProps>): void {
-    const allowedUpdates: Partial<ConductivityProps> = {}
+  setProperties(patch: Partial<ConductivityProps>): void {
+    const allowed: Partial<ConductivityProps> = {}
 
-    if (properties.productModel !== undefined) allowedUpdates.productModel = properties.productModel
-    if (properties.installDate !== undefined) allowedUpdates.installDate = properties.installDate
-    if (properties.note !== undefined) allowedUpdates.note = properties.note
-    if (properties.value !== undefined) allowedUpdates.value = properties.value
-    if (properties.setpoint !== undefined) allowedUpdates.setpoint = properties.setpoint
+    if (patch.productModel !== undefined) allowed.productModel = patch.productModel
+    if (patch.installDate !== undefined) allowed.installDate = patch.installDate
+    if (patch.note !== undefined) allowed.note = patch.note
+    if (patch.value !== undefined) allowed.value = patch.value
+    if (patch.setpoint !== undefined) allowed.setpoint = patch.setpoint
 
-    // ✅ 不允许外部修改 rangeDisplay
-    if (properties.rangeDisplay) {
-      allowedUpdates.rangeDisplay = this.properties.rangeDisplay
+    // ✅ 报警上下限：允许编辑，并保证 low ≤ high
+    const hasLow = patch.alarmLow !== undefined
+    const hasHigh = patch.alarmHigh !== undefined
+    if (hasLow || hasHigh) {
+      const nextLow = hasLow ? patch.alarmLow : this.properties.alarmLow
+      const nextHigh = hasHigh ? patch.alarmHigh : this.properties.alarmHigh
+      if (!(nextLow !== null && nextHigh !== null && nextLow > nextHigh)) {
+        if (hasLow) allowed.alarmLow = patch.alarmLow!
+        if (hasHigh) allowed.alarmHigh = patch.alarmHigh!
+      }
     }
 
-    super.setProperties(allowedUpdates)
-    this.properties = { ...this.properties, ...allowedUpdates }
+    // ✅ rangeDisplay 永远只读：忽略外部写入
+    super.setProperties(allowed)
+    this.properties = { ...this.properties, ...allowed }
   }
 
   private getInitialProperties(userProps?: Partial<ConductivityProps>): ConductivityProps {
@@ -141,7 +151,7 @@ class ConductivityView extends RectNode {
 }
 
 export default {
-  type: 'bpmn:conductivityAnalyzer',
+  type: 'bpmn:conductivity-analyzer',
   view: ConductivityView,
   model: ConductivityModel
 }

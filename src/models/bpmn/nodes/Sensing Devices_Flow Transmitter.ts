@@ -28,26 +28,26 @@ class FlowModel extends RectNodeModel {
 
   static formSchema: FieldSchema[] = [
     ...baseFields,
-    // 过滤掉原来的 range 和 alarmHigh 字段
-    ...sensingFields.filter(field => !field.key.startsWith('range') && field.key !== 'alarmHigh').map(field => {
-      const immutable = [
-        'deviceName',
-        'param',
-        'unit',
-        'accuracy',
-        'sampleFreq',
-        'interfaceType',
-        'commMethod',
-        'powerSupply'
-      ]
-      if (immutable.includes(field.key)) {
-        return { ...field, disabled: true, readOnly: true }
-      }
-      return field
-    }),
-    // ✅ 自定义新的报警上限框，支持显示字符串
+    ...sensingFields
+      .filter(field => !field.key.startsWith('range') && field.key !== 'alarmHigh')
+      .map(field => {
+        const immutable = [
+          'deviceName',
+          'param',
+          'unit',
+          'accuracy',
+          'sampleFreq',
+          'interfaceType',
+          'commMethod',
+          'powerSupply'
+        ]
+        if (immutable.includes(field.key)) {
+          return { ...field, disabled: true, readOnly: true }
+        }
+        return field
+      }),
     { key: 'alarmHigh', label: '报警上限', type: 'text', placeholder: '待定额定值' },
-    { key: 'rangeDisplay', label: '测量范围', type: 'text' },
+    { key: 'rangeDisplay', label: '测量范围', type: 'text', disabled: true, readOnly: true },
     { key: 'note', label: '备注', type: 'textarea', placeholder: '请输入备注信息' }
   ]
 
@@ -62,23 +62,19 @@ class FlowModel extends RectNodeModel {
     this.properties = this.getInitialProperties(data.properties as Partial<FlowProps> | undefined)
   }
 
-  setProperties(properties: Partial<FlowProps>): void {
+  setProperties(patch: Partial<FlowProps>): void {
     const allowed: Partial<FlowProps> = {}
 
-    if (properties.productModel !== undefined) allowed.productModel = properties.productModel
-    if (properties.installDate !== undefined) allowed.installDate = properties.installDate
-    if (properties.note !== undefined) allowed.note = properties.note
-    if (properties.value !== undefined) allowed.value = properties.value
-    if (properties.setpoint !== undefined) allowed.setpoint = properties.setpoint
-    if (properties.alarmHigh !== undefined) {
-      allowed.alarmHigh = properties.alarmHigh || this.properties.alarmHigh
-    }
+    if (patch.productModel !== undefined) allowed.productModel = patch.productModel
+    if (patch.installDate !== undefined) allowed.installDate = patch.installDate
+    if (patch.note !== undefined) allowed.note = patch.note
+    if (patch.value !== undefined) allowed.value = patch.value
+    if (patch.setpoint !== undefined) allowed.setpoint = patch.setpoint
 
-    // 保证 rangeDisplay 不被覆盖
-    if (properties.rangeDisplay) {
-      allowed.rangeDisplay = this.properties.rangeDisplay
-    }
+    if (patch.alarmLow !== undefined) allowed.alarmLow = patch.alarmLow
+    if (patch.alarmHigh !== undefined) allowed.alarmHigh = patch.alarmHigh
 
+    // ✅ rangeDisplay 永远只读：忽略外部写入
     super.setProperties(allowed)
     this.properties = { ...this.properties, ...allowed }
   }
@@ -99,7 +95,7 @@ class FlowModel extends RectNodeModel {
       powerSupply: '24 VDC',
       value: 12.6,
       alarmLow: 1,
-      alarmHigh: 40, // ✅ 初始化为字符串
+      alarmHigh: 40,
       setpoint: 30
     }
     return { ...defaults, ...user, rangeDisplay: defaults.rangeDisplay }
@@ -140,7 +136,7 @@ class FlowView extends RectNode {
 }
 
 export default {
-  type: 'bpmn:flowTransmitter',
+  type: 'bpmn:flow-transmitter',
   view: FlowView,
   model: FlowModel
 }
