@@ -1,4 +1,5 @@
-import { join } from 'path'
+// vite.config.ts
+import { join, resolve } from 'path'
 import vue from '@vitejs/plugin-vue'
 import visualizer from 'rollup-plugin-visualizer'
 import { AntDesignVueResolver } from 'unplugin-vue-components/resolvers'
@@ -7,17 +8,15 @@ import { defineConfig, splitVendorChunkPlugin } from 'vite'
 
 export default defineConfig(({ command }) => {
   console.log(`🚀 command: ${command}\n`)
+
   return {
-    base: './',
+    base: command === 'serve' ? '/' : './',
+
     plugins: [
       vue(),
       splitVendorChunkPlugin(),
       Components({
-        resolvers: [
-          AntDesignVueResolver({
-            resolveIcons: true,
-          }),
-        ],
+        resolvers: [AntDesignVueResolver({ resolveIcons: true })],
         dts: command === 'build' ? 'src/components.d.ts' : false,
       }),
       visualizer({
@@ -27,11 +26,14 @@ export default defineConfig(({ command }) => {
         filename: './node_modules/.cache/visualizer/stats.html',
       }),
     ],
+
     resolve: {
       alias: {
-        '@/': '/src/',
+        // ✅ 关键：用文件系统路径，Vite2 在多入口下最稳
+        '@': resolve(__dirname, 'src'),
       },
     },
+
     build: {
       rollupOptions: {
         input: {
@@ -47,8 +49,6 @@ export default defineConfig(({ command }) => {
       host: '127.0.0.1',
       port: 4173,
       strictPort: true,
-
-      // ✅ 关键：所有 /api 和 /dev-api 都转发到后端 8080
       proxy: {
         '/api': {
           target: 'http://127.0.0.1:8080',

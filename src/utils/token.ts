@@ -1,13 +1,14 @@
-const TOKEN_KEY = 'token'
+// src/utils/token.ts
+const KEY = 'token'
 
 export function getToken() {
-  return localStorage.getItem(TOKEN_KEY) || ''
+  return localStorage.getItem(KEY) || ''
 }
 
 export function setToken(token: string) {
-  localStorage.setItem(TOKEN_KEY, token)
+  localStorage.setItem(KEY, token)
 }
 
 export function clearToken() {
-  localStorage.removeItem(TOKEN_KEY)
+  localStorage.removeItem(KEY)
 }

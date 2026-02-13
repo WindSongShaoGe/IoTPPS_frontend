@@ -1,18 +1,20 @@
 // src/api/realtime.ts
-import axios from 'axios'
+import request from '@/api/request'
 
-const http = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE || '',
-  timeout: 15000,
-})
-
-export async function getRealtimePeek(nodeType: string, nodeId?: string) {
-  const { data } = await http.get('/api/realtime/peek', { params: { nodeType, nodeId } })
-  return data?.data ?? data
+export async function getRealtimePeek(nodeType: string, nodeId: string) {
+  return await request.get('/api/realtime/peek', {
+    params: { nodeType, nodeId },
+    headers: { isToken: false },
+  })
 }
 
-// ✅ 新增：顺序取下一条（播放用）
-export async function getRealtimeNext(nodeType: string, cursor?: number) {
-  const { data } = await http.get('/api/realtime/next', { params: { nodeType, cursor } })
-  return data?.data ?? data
+export async function getRealtimeNext(nodeType: string, nodeId: string, cursor?: number) {
+  // ✅ cursor 为 undefined 时不要塞进 params（避免 Spring 把空字符串转 Long 报错）
+  const params: any = { nodeType, nodeId }
+  if (cursor !== undefined && cursor !== null) params.cursor = cursor
+
+  return await request.get('/api/realtime/next', {
+    params,
+    headers: { isToken: false },
+  })
 }
