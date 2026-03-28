@@ -179,7 +179,19 @@ const DEVICE_MAP: Record<string, { nameZh: string; nameEn: string; categoryZh: s
   },
 
   // ---- Cloud
-  'Cloud Serve_Cloud Database': { nameZh: '云数据库', nameEn: 'Cloud Database', categoryZh: '云服务器', categoryEn: 'Cloud Server' },
+  'Cloud Server_Cloud Database': {
+    nameZh: '云数据库',
+    nameEn: 'Cloud Database',
+    categoryZh: '云服务器',
+    categoryEn: 'Cloud Server',
+  },
+  // 兼容旧拼写
+  'Cloud Serve_Cloud Database': {
+    nameZh: '云数据库',
+    nameEn: 'Cloud Database',
+    categoryZh: '云服务器',
+    categoryEn: 'Cloud Server',
+  },
   'Cloud Server_Data Visualization Platform': {
     nameZh: '数据可视化平台',
     nameEn: 'Data Visualization Platform',
@@ -330,7 +342,13 @@ function sameLoose(a: string, b: string) {
 /** 设备名称别名(中/英) → 文件键 */
 const NAME_ALIAS_TO_KEY: Record<string, string> = {
   [norm('Pump')]: 'Mechatronic Devices_Pump',
-  泵: 'Mechatronic Devices_Pump',
+  [norm('泵')]: 'Mechatronic Devices_Pump',
+
+  [norm('Conductivity Analyzer')]: 'Sensing Devices_Conductivity Analyzer',
+  [norm('电导率分析仪')]: 'Sensing Devices_Conductivity Analyzer',
+
+  [norm('Cloud Database')]: 'Cloud Server_Cloud Database',
+  [norm('云数据库')]: 'Cloud Server_Cloud Database',
 }
 
 /** 从 properties 里尽可能拿到“设备名称”（中/英） */
@@ -361,19 +379,33 @@ function getDeviceNameFromProps(p: Record<string, any>) {
 function deriveKey(model: any, p: Record<string, any>) {
   const { nameZh, nameEn } = getDeviceNameFromProps(p)
 
+  // ① 先走手动别名
   const enKey = NAME_ALIAS_TO_KEY[norm(nameEn)]
   if (enKey && DEVICE_MAP[enKey]) return enKey
 
   const zhKey = NAME_ALIAS_TO_KEY[norm(nameZh)]
   if (zhKey && DEVICE_MAP[zhKey]) return zhKey
 
+  // ② 再走显式字段
   const explicit = p.fileName || p.nodeKey || p.titleKey
   if (explicit && DEVICE_MAP[explicit]) return explicit as string
 
+  // ③ 再按 DEVICE_MAP 里的 nameZh / nameEn 自动匹配
+  for (const [key, item] of Object.entries(DEVICE_MAP)) {
+    if (
+      (nameZh && norm(item.nameZh) === norm(nameZh)) ||
+      (nameEn && norm(item.nameEn) === norm(nameEn))
+    ) {
+      return key
+    }
+  }
+
+  // ④ 最后再走 type 别名
   if (model?.type && TYPE_ALIAS[model.type]) {
     const k = TYPE_ALIAS[model.type]
     if (DEVICE_MAP[k]) return k
   }
+
   return ''
 }
 
