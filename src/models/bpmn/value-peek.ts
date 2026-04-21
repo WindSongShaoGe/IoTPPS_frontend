@@ -1,21 +1,18 @@
-// src/models/bpmn/value-peek.ts
 import type { BaseNodeModel, VNode } from '@logicflow/core'
 import { h as lfH } from '@logicflow/core'
 import { sampleDisplayByType } from './sample-display'
 import { acquireRealtime, releaseRealtime } from './realtime-poller'
 
-// 兼容不同形状：从 model 上读 width/height/r
 function getSize(model: any) {
   const w = model.width ?? (model.r ? model.r * 2 : 34)
   const h = model.height ?? (model.r ? model.r * 2 : 34)
   return { w, h }
 }
 
-/** Model 装饰：注入 + 放行 __peekOn / __peekText / __peekUpdatedAt / __peekCursor */
 export function withValuePeekModel<T extends new (...args: any[]) => BaseNodeModel>(BaseModel: T) {
   return class ValuePeekModel extends BaseModel {
     setAttributes(): void {
-      // @ts-expect-error
+      // @ts-expect-error keep compatibility with different base model impls
       super.setAttributes?.()
       const t = (this as any).type as string
       const props = (this as any).properties || ((this as any).properties = {})
@@ -24,11 +21,14 @@ export function withValuePeekModel<T extends new (...args: any[]) => BaseNodeMod
       if (props.__peekOn == null) props.__peekOn = false
       if (props.__peekUpdatedAt == null) props.__peekUpdatedAt = null
       if (props.__peekCursor == null) props.__peekCursor = null
+      if (props.__peekRawText == null) props.__peekRawText = props.__peekText
+      if (props.__autoRtNodeId == null) props.__autoRtNodeId = ''
+      if (props.__autoRtBindRule == null) props.__autoRtBindRule = ''
 
-      // （可选兼容字段）
       if (props.__rtText == null) props.__rtText = props.__peekText
       if (props.__rtUpdatedAt == null) props.__rtUpdatedAt = null
       if (props.__rtCursor == null) props.__rtCursor = null
+      if (props.__rtRawText == null) props.__rtRawText = props.__peekRawText
     }
 
     setProperties(next: Record<string, any>) {
@@ -36,12 +36,20 @@ export function withValuePeekModel<T extends new (...args: any[]) => BaseNodeMod
       const hasPeekTxt = Object.prototype.hasOwnProperty.call(next, '__peekText')
       const hasPeekAt = Object.prototype.hasOwnProperty.call(next, '__peekUpdatedAt')
       const hasPeekCursor = Object.prototype.hasOwnProperty.call(next, '__peekCursor')
+      const hasPeekRaw = Object.prototype.hasOwnProperty.call(next, '__peekRawText')
+      const hasRtRaw = Object.prototype.hasOwnProperty.call(next, '__rtRawText')
+      const hasAutoRtNodeId = Object.prototype.hasOwnProperty.call(next, '__autoRtNodeId')
+      const hasAutoRtBindRule = Object.prototype.hasOwnProperty.call(next, '__autoRtBindRule')
 
-      const peek = {
+      const keep = {
         __peekOn: hasPeekOn ? next.__peekOn : undefined,
         __peekText: hasPeekTxt ? next.__peekText : undefined,
         __peekUpdatedAt: hasPeekAt ? next.__peekUpdatedAt : undefined,
         __peekCursor: hasPeekCursor ? next.__peekCursor : undefined,
+        __peekRawText: hasPeekRaw ? next.__peekRawText : undefined,
+        __rtRawText: hasRtRaw ? next.__rtRawText : undefined,
+        __autoRtNodeId: hasAutoRtNodeId ? next.__autoRtNodeId : undefined,
+        __autoRtBindRule: hasAutoRtBindRule ? next.__autoRtBindRule : undefined,
       }
 
       const rest = { ...next }
@@ -49,27 +57,29 @@ export function withValuePeekModel<T extends new (...args: any[]) => BaseNodeMod
       delete (rest as any).__peekText
       delete (rest as any).__peekUpdatedAt
       delete (rest as any).__peekCursor
+      delete (rest as any).__peekRawText
+      delete (rest as any).__rtRawText
+      delete (rest as any).__autoRtNodeId
+      delete (rest as any).__autoRtBindRule
 
-      // @ts-expect-error
+      // @ts-expect-error keep compatibility with different base model impls
       super.setProperties?.(rest)
 
       const props = (this as any).properties || ((this as any).properties = {})
-      if (hasPeekOn) props.__peekOn = peek.__peekOn
-      if (hasPeekTxt) props.__peekText = peek.__peekText
-      if (hasPeekAt) props.__peekUpdatedAt = peek.__peekUpdatedAt
-      if (hasPeekCursor) props.__peekCursor = peek.__peekCursor
+      if (hasPeekOn) props.__peekOn = keep.__peekOn
+      if (hasPeekTxt) props.__peekText = keep.__peekText
+      if (hasPeekAt) props.__peekUpdatedAt = keep.__peekUpdatedAt
+      if (hasPeekCursor) props.__peekCursor = keep.__peekCursor
+      if (hasPeekRaw) props.__peekRawText = keep.__peekRawText
+      if (hasRtRaw) props.__rtRawText = keep.__rtRawText
+      if (hasAutoRtNodeId) props.__autoRtNodeId = keep.__autoRtNodeId
+      if (hasAutoRtBindRule) props.__autoRtBindRule = keep.__autoRtBindRule
     }
   }
 }
 
-/**
- * View 装饰：右上角按钮 + 下方气泡（点按开关）
- * ✅ 泵节点自动播放：acquireRealtime(model,'auto')（不依赖气泡）
- * ✅ 气泡按钮只控制显示：__peekOn
- */
 export function withValuePeekView<T extends new (...args: any[]) => any>(BaseView: T) {
   return class ValuePeekView extends (BaseView as any) {
-    /** 主动通知属性面板刷新 */
     private emitPropsChanged(model: BaseNodeModel) {
       const gm = (this as any).props.graphModel
       const id = String((model as any).id)
@@ -96,7 +106,6 @@ export function withValuePeekView<T extends new (...args: any[]) => any>(BaseVie
         const id = String((model as any).id)
 
         if (on) {
-          // ✅ 只开显示，不重置 cursor
           model.setProperties({ __peekOn: true })
           this.emitPropsChanged(model)
           acquireRealtime(model, 'bubble')
@@ -164,7 +173,7 @@ export function withValuePeekView<T extends new (...args: any[]) => any>(BaseVie
     }
 
     getShape() {
-      // @ts-expect-error
+      // @ts-expect-error keep compatibility with different base view impls
       const group = super.getShape()
       const model: BaseNodeModel = (this as any).props.model
 
@@ -173,14 +182,9 @@ export function withValuePeekView<T extends new (...args: any[]) => any>(BaseVie
         const id = String((model as any).id)
         const type = String((model as any).type ?? '')
 
-        // ✅ 关键：泵节点自动播放（页面一进来就开始读）
-        if (type === 'bpmn:pump') {
-          acquireRealtime(model, 'auto')
-        } else {
-          releaseRealtime(id, 'auto')
-        }
+        if (type === 'bpmn:pump') acquireRealtime(model, 'auto')
+        else releaseRealtime(id, 'auto')
 
-        // ✅ 气泡按钮只控制显示（但开着时也给 bubble owner 一份）
         if (props.__peekOn) acquireRealtime(model, 'bubble')
         else releaseRealtime(id, 'bubble')
 
@@ -193,21 +197,17 @@ export function withValuePeekView<T extends new (...args: any[]) => any>(BaseVie
       }
     }
 
-    // 节点销毁时清理（防“幽灵轮询”👻）
     destroy() {
       const model: BaseNodeModel = (this as any).props.model
       const id = String((model as any).id)
-
       releaseRealtime(id, 'bubble')
       releaseRealtime(id, 'auto')
-
-      // @ts-expect-error
+      // @ts-expect-error keep compatibility with different base view impls
       super.destroy?.()
     }
   }
 }
 
-/** 把节点定义打包成“可 peek”版本 */
 export function wrapNodeWithValuePeek(nodeDef: { type: string; model: any; view: any }) {
   return {
     ...nodeDef,

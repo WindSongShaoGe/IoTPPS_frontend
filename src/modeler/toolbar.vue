@@ -69,6 +69,20 @@
       </a-dropdown>
     </a-button-group>
 
+    <a-button-group>
+      <a-radio-group v-model:value="realtimeScenario" button-style="solid" size="small" @change="handleScenarioChange">
+        <a-radio-button value="normal">Normal</a-radio-button>
+        <a-radio-button value="attack">Attack</a-radio-button>
+      </a-radio-group>
+    </a-button-group>
+
+    <a-button-group>
+      <a-radio-group v-model:value="realtimeSpeedMode" button-style="solid" size="small" @change="handleSpeedModeChange">
+        <a-radio-button value="normal">普通模式</a-radio-button>
+        <a-radio-button value="demo">演示模式</a-radio-button>
+      </a-radio-group>
+    </a-button-group>
+
     <!-- === 保存 === -->
     <a-button-group>
       <a-button :disabled="!modified" type="primary">
@@ -172,7 +186,19 @@
 <script setup lang="ts">
 import Icon from '@ant-design/icons-vue';
 import { ModelerContext } from 'logicflow-useapi';
-import { inject, ref } from 'vue';
+import { inject, onBeforeUnmount, onMounted, ref } from 'vue';
+import {
+  getRealtimeScenario,
+  onRealtimeScenarioChange,
+  setRealtimeScenario,
+  type RealtimeScenario,
+} from '@/models/bpmn/realtime-scenario';
+import {
+  getRealtimeSpeedMode,
+  onRealtimeSpeedChange,
+  setRealtimeSpeedMode,
+  type RealtimeSpeedMode,
+} from '@/models/bpmn/realtime-speed';
 
 const modelerContext: ModelerContext = inject<any>('modeler_context')
 const {
@@ -184,6 +210,33 @@ const {
 const adapters = modelerContext.modelType.adapters
 
 const codeViewerVisible = ref(false)
+const realtimeScenario = ref<RealtimeScenario>(getRealtimeScenario())
+const realtimeSpeedMode = ref<RealtimeSpeedMode>(getRealtimeSpeedMode())
+
+let unsubscribeScenario: (() => void) | null = null
+let unsubscribeSpeed: (() => void) | null = null
+
+function handleScenarioChange() {
+  setRealtimeScenario(realtimeScenario.value)
+}
+
+function handleSpeedModeChange() {
+  setRealtimeSpeedMode(realtimeSpeedMode.value)
+}
+
+onMounted(() => {
+  unsubscribeScenario = onRealtimeScenarioChange((next) => {
+    realtimeScenario.value = next
+  })
+  unsubscribeSpeed = onRealtimeSpeedChange((next) => {
+    realtimeSpeedMode.value = next.mode
+  })
+})
+
+onBeforeUnmount(() => {
+  if (unsubscribeScenario) unsubscribeScenario()
+  if (unsubscribeSpeed) unsubscribeSpeed()
+})
 
 // ✅ 新增函数：切换管道类型
 function setPipeType(type: string) {
