@@ -128,7 +128,8 @@ onMounted(async () => {
     // 设置默认属性
     modeler.lf.setProperties(data.id, {
       pipeType: 'Connection_Galvanized Steel Pipe',
-      pipeWidth: 12
+      pipeWidth: 12,
+      note: ''
     })
 
     // 🔁 触发一次“假移动”强制 rerender
@@ -196,8 +197,16 @@ onMounted(async () => {
   // 选中同步
   modeler.lf.on('element:click', ({ data }: any) => { selectedId.value = data?.id || null })
   modeler.lf.on('blank:click', () => { selectedId.value = null })
-  modeler.lf.on('selection:change', ({ nodes }: any) => {
-    selectedId.value = nodes?.length ? nodes[0].id : null
+  modeler.lf.on('selection:change', ({ nodes, edges }: any) => {
+    if (nodes?.length) {
+      selectedId.value = nodes[0].id
+      return
+    }
+    if (edges?.length) {
+      selectedId.value = edges[0].id
+      return
+    }
+    selectedId.value = null
   })
 
   // 容器大小监听

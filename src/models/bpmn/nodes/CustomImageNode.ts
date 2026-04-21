@@ -1,6 +1,7 @@
 // src/models/bpmn/nodes/CustomImageNode.ts
 import { GraphModel, h, NodeConfig, RectNode, RectNodeModel } from '@logicflow/core'
 import { getBpmnId } from '@logicflow/extension/es/bpmn/getBpmnId'
+import type { FieldSchema } from '@/models/bpmn/schemas/commonSchema'
 
 export interface CustomImageProps {
   width?: number
@@ -8,10 +9,18 @@ export interface CustomImageProps {
   image?: string
   nameZh?: string
   nameEn?: string
+  deviceName?: string
+  deviceNameEn?: string
+  categoryZh?: string
+  categoryEn?: string
+  note?: string
 }
 
 export class CustomImageModel extends RectNodeModel {
   static extendKey = 'CustomImageModel'
+  static formSchema: FieldSchema[] = [
+    { key: 'note', label: '备注', type: 'textarea', placeholder: '请输入备注信息' },
+  ]
 
   declare properties: CustomImageProps
 
@@ -25,7 +34,24 @@ export class CustomImageModel extends RectNodeModel {
     const p = (data?.properties || {}) as CustomImageProps
     this.width = Number(p.width ?? 120)
     this.height = Number(p.height ?? 84)
-    this.properties = { ...p }
+
+    const merged: CustomImageProps = { ...p }
+    if (!merged.nameZh && merged.deviceName)
+      merged.nameZh = merged.deviceName
+    if (!merged.nameEn && merged.deviceNameEn)
+      merged.nameEn = merged.deviceNameEn
+    if (!merged.categoryZh)
+      merged.categoryZh = '自定义组件'
+    if (!merged.categoryEn)
+      merged.categoryEn = 'Custom Component'
+    if (merged.note == null)
+      merged.note = ''
+    if (!merged.deviceName)
+      merged.deviceName = merged.nameZh || '自定义组件'
+    if (!merged.deviceNameEn)
+      merged.deviceNameEn = merged.nameEn || 'Custom'
+
+    this.properties = merged
   }
 
   getNodeStyle() {

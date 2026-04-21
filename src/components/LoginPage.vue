@@ -1,52 +1,52 @@
 <template>
   <div class="page">
-    <!-- 背景层 -->
     <div class="bg" aria-hidden="true"></div>
 
     <div class="shell">
-      <!-- 左侧品牌区（大屏展示，小屏自动隐藏） -->
       <section class="brand" aria-hidden="true">
-        <div class="brandCard">
-          <div class="logo">
-            <span>⚙️</span>
-          </div>
-          <h1 class="brandTitle">{{ appTitle }}</h1>
-          <p class="brandSub">
-            统一管理 · 可靠登录 · 一键进入流程设计器
-          </p>
+        <div class="brand-card">
+          <div class="badge">AUTH</div>
+          <h1 class="brand-title">{{ appTitle }}</h1>
+          <p class="brand-subtitle">Industrial workflow modeling platform access entry.</p>
 
-          <div class="brandMeta">
-            <div class="pill">Secure Session</div>
-            <div class="pill">Captcha Ready</div>
-            <div class="pill">Token Based</div>
-          </div>
+          <dl class="meta-list">
+            <div class="meta-item">
+              <dt>Authentication</dt>
+              <dd>JWT + Redis Session</dd>
+            </div>
+            <div class="meta-item">
+              <dt>Security Policy</dt>
+              <dd>Captcha verification and single-session control</dd>
+            </div>
+            <div class="meta-item">
+              <dt>Tech Stack</dt>
+              <dd>Vue 3 + LogicFlow</dd>
+            </div>
+          </dl>
 
-          <div class="brandFooter">
-            <span class="dot"></span>
-            <span>Powered by Vue 3 + LogicFlow</span>
+          <div class="brand-footer">
+            <span class="status-dot"></span>
+            <span>System Access Channel Online</span>
           </div>
         </div>
       </section>
 
-      <!-- 右侧表单区 -->
       <main class="panel" role="main">
         <div class="card">
           <header class="header">
-            <div class="headerTop">
-              <h2 class="title">欢迎回来</h2>
-              <span class="spark">✨</span>
-            </div>
-            <p class="subtitle">请使用你的账号登录进入流程设计器</p>
+            <p class="header-tag">AUTHENTICATION CENTER</p>
+            <h2 class="title">Sign In</h2>
+            <p class="subtitle">Use your assigned account to enter the modeler workspace.</p>
           </header>
 
           <div class="form">
             <div class="field">
-              <label for="u">用户名</label>
+              <label for="username">Username</label>
               <input
-                id="u"
+                id="username"
                 ref="userInput"
                 v-model="username"
-                placeholder="请输入用户名/手机号/邮箱"
+                placeholder="Enter username / phone / email"
                 autocomplete="username"
                 autocapitalize="off"
                 spellcheck="false"
@@ -55,59 +55,64 @@
             </div>
 
             <div class="field">
-              <label for="p">密码</label>
-              <div class="passwordRow">
+              <label for="password">Password</label>
+              <div class="password-row">
                 <input
-                  id="p"
+                  id="password"
                   v-model="password"
                   :type="showPwd ? 'text' : 'password'"
-                  placeholder="请输入密码"
+                  placeholder="Enter password"
                   autocomplete="current-password"
                   @keydown="onKey"
                 />
-                <button class="ghost" type="button" @click="showPwd = !showPwd" :aria-label="showPwd ? '隐藏密码' : '显示密码'">
-                  {{ showPwd ? '🙈' : '👀' }}
+                <button
+                  class="ghost"
+                  type="button"
+                  @click="showPwd = !showPwd"
+                  :aria-label="showPwd ? 'Hide password' : 'Show password'"
+                >
+                  {{ showPwd ? 'Hide' : 'Show' }}
                 </button>
               </div>
-              <p v-if="capsOn" class="tiny warn">检测到大写锁定（CapsLock）已开启</p>
+              <p v-if="capsOn" class="tiny warn">Caps Lock is currently enabled.</p>
             </div>
 
             <div v-if="captchaEnabled" class="field">
-              <label for="c">验证码</label>
-              <div class="captchaRow">
+              <label for="captcha">Captcha</label>
+              <div class="captcha-row">
                 <input
-                  id="c"
+                  id="captcha"
                   v-model="code"
-                  placeholder="请输入验证码"
+                  placeholder="Enter captcha"
                   autocomplete="off"
                   inputmode="numeric"
                   @keydown="onKey"
                 />
                 <img
-                  class="captchaImg"
+                  class="captcha-img"
                   :src="captchaSrc"
-                  title="点我换一张"
-                  alt="验证码"
+                  title="Click to refresh captcha"
+                  alt="captcha"
                   @click="loadCaptcha"
                 />
               </div>
-              <p class="tiny">看不清？点图片刷新</p>
+              <p class="tiny">If unreadable, click the image to refresh.</p>
             </div>
 
             <button class="btn" :disabled="loading || !canSubmit" @click="doLogin">
-              <span class="btnText">{{ loading ? '登录中…' : '登录并进入流程设计器' }}</span>
-              <span class="btnArrow" aria-hidden="true">→</span>
+              <span>{{ loading ? 'Signing in...' : 'Sign in and open modeler' }}</span>
+              <span aria-hidden="true">&gt;</span>
             </button>
 
             <div v-if="hint" class="alert" role="alert">
-              <span class="alertIcon">⚠️</span>
-              <span class="alertText">{{ hint }}</span>
+              <span class="alert-label">Notice</span>
+              <span class="alert-text">{{ hint }}</span>
             </div>
 
             <footer class="footer">
-              <span>© {{ new Date().getFullYear() }} {{ appTitle }}</span>
-              <span class="sep">·</span>
-              <span class="muted">如无法登录，请联系管理员重置密码</span>
+              <span>&copy; {{ new Date().getFullYear() }} {{ appTitle }}</span>
+              <span class="sep">|</span>
+              <span class="muted">If sign-in fails, contact admin to reset credentials.</span>
             </footer>
           </div>
         </div>
@@ -121,9 +126,8 @@ import { computed, onMounted, ref } from 'vue'
 import { getCaptchaImage, loginApi } from '@/api/auth'
 import { setToken } from '@/utils/token'
 
-const appTitle = (import.meta as any)?.env?.VITE_APP_TITLE || '流程设计平台'
+const appTitle = (import.meta as any)?.env?.VITE_APP_TITLE || 'Process Modeling Platform'
 
-// ✅ 不再默认填 admin / 密码
 const username = ref('')
 const password = ref('')
 const showPwd = ref(false)
@@ -136,7 +140,6 @@ const captchaEnabled = ref(false)
 const loading = ref(false)
 const hint = ref('')
 const capsOn = ref(false)
-
 const userInput = ref<HTMLInputElement | null>(null)
 
 const canSubmit = computed(() => {
@@ -147,7 +150,7 @@ const canSubmit = computed(() => {
   return true
 })
 
-function normalizeCaptchaImg(img: string) {
+function normalizeCaptchaImg(img: string): string {
   if (!img) return ''
   if (img.startsWith('data:image')) return img
   return `data:image/png;base64,${img}`
@@ -165,25 +168,19 @@ async function loadCaptcha() {
   }
 }
 
-/**
- * 兼容 base: './'
- * - 没 redirect：默认去 ./modeler.html
- * - 有 redirect（通常是 /modeler.html?...）：转成 ./modeler.html?... 才稳
- */
-function getRedirectTarget() {
+function getRedirectTarget(): string {
   const sp = new URLSearchParams(location.search)
-  const r = sp.get('redirect')
-  if (!r) return './modeler.html'
-  return r.startsWith('/') ? `.${r}` : r
+  const redirect = sp.get('redirect')
+  if (!redirect) return './modeler.html'
+  return redirect.startsWith('/') ? `.${redirect}` : redirect
 }
 
 function onKey(e: KeyboardEvent) {
-  // CapsLock 检测（更像“专业产品”的小细节）
   try {
     capsOn.value = !!e.getModifierState && e.getModifierState('CapsLock')
-  } catch {}
-
-  // 回车提交
+  } catch {
+    // ignore caps lock detection error
+  }
   if (e.key === 'Enter') {
     e.preventDefault()
     if (canSubmit.value && !loading.value) doLogin()
@@ -196,31 +193,23 @@ async function doLogin() {
   try {
     const u = username.value.trim()
     const p = password.value
-
-    if (!u || !p) throw new Error('请输入用户名和密码')
+    if (!u || !p) throw new Error('Please enter username and password.')
 
     const payload: any = { username: u, password: p }
-
     if (captchaEnabled.value) {
-      if (!code.value.trim()) throw new Error('请输入验证码')
+      if (!code.value.trim()) throw new Error('Please enter captcha code.')
       payload.code = code.value.trim()
       payload.uuid = uuid.value
     }
 
     const res: any = await loginApi(payload)
-
-    // 兼容：token 在 res.token / res.data.token / res.data
-    const token =
-      res?.token ||
-      res?.data?.token ||
-      (typeof res?.data === 'string' ? res.data : '')
-
-    if (!token) throw new Error(res?.msg || '登录失败：未获取到 token')
+    const token = res?.token || res?.data?.token || (typeof res?.data === 'string' ? res.data : '')
+    if (!token) throw new Error(res?.msg || 'Login failed: token not found.')
 
     setToken(token)
     location.href = getRedirectTarget()
   } catch (e: any) {
-    hint.value = e?.message || '登录失败：请检查账号密码是否正确'
+    hint.value = e?.message || 'Login failed. Please verify your credentials.'
     if (captchaEnabled.value) await loadCaptcha()
   } finally {
     loading.value = false
@@ -229,246 +218,328 @@ async function doLogin() {
 
 onMounted(async () => {
   await loadCaptcha()
-  // 体验：自动聚焦用户名
   setTimeout(() => userInput.value?.focus(), 0)
 })
 </script>
 
 <style scoped>
-/* -------------- 基础变量 -------------- */
-.page{
-  min-height:100vh;
-  position:relative;
-  overflow:hidden;
-  color:#0f172a;
+.page {
+  min-height: 100vh;
+  position: relative;
+  overflow: hidden;
+  color: #0f172a;
 }
-.bg{
-  position:absolute; inset:-40px;
+
+.bg {
+  position: absolute;
+  inset: -40px;
   background:
-    radial-gradient(800px 500px at 10% 10%, rgba(99,102,241,.35), transparent 60%),
-    radial-gradient(900px 550px at 90% 20%, rgba(34,197,94,.22), transparent 60%),
-    radial-gradient(700px 500px at 50% 110%, rgba(59,130,246,.25), transparent 60%),
-    linear-gradient(180deg, #0b1020 0%, #0b1226 70%, #0b1226 100%);
-  filter:saturate(1.05);
+    radial-gradient(760px 460px at 8% 12%, rgba(46, 94, 178, 0.36), transparent 60%),
+    radial-gradient(820px 500px at 92% 16%, rgba(24, 65, 132, 0.28), transparent 62%),
+    linear-gradient(180deg, #0c1429 0%, #0e1b33 72%, #101e39 100%);
+  filter: saturate(1.02);
 }
-.shell{
-  position:relative;
-  min-height:100vh;
-  display:grid;
+
+.shell {
+  position: relative;
+  min-height: 100vh;
+  display: grid;
   grid-template-columns: 1.05fr 0.95fr;
-  gap:28px;
-  padding:28px;
-  max-width:1100px;
-  margin:0 auto;
-  align-items:center;
+  gap: 28px;
+  padding: 28px;
+  max-width: 1100px;
+  margin: 0 auto;
+  align-items: center;
 }
 
-/* -------------- 品牌区 -------------- */
-.brand{ display:flex; justify-content:center; }
-.brandCard{
-  width:100%;
-  max-width:520px;
-  padding:26px;
-  border-radius:22px;
-  background: rgba(255,255,255,.06);
-  border: 1px solid rgba(255,255,255,.12);
-  box-shadow: 0 20px 60px rgba(0,0,0,.35);
-  backdrop-filter: blur(10px);
-}
-.logo{
-  width:52px;height:52px;
-  border-radius:16px;
-  display:grid;place-items:center;
-  background: rgba(255,255,255,.12);
-  border: 1px solid rgba(255,255,255,.14);
-  margin-bottom:14px;
-  font-size:24px;
-}
-.brandTitle{
-  margin:0;
-  font-size:28px;
-  letter-spacing:.3px;
-  color: rgba(255,255,255,.95);
-}
-.brandSub{
-  margin:10px 0 14px;
-  color: rgba(255,255,255,.72);
-  line-height:1.6;
-}
-.brandMeta{
-  display:flex;
-  flex-wrap:wrap;
-  gap:10px;
-  margin-top:10px;
-}
-.pill{
-  font-size:12px;
-  padding:6px 10px;
-  border-radius:999px;
-  color: rgba(255,255,255,.85);
-  background: rgba(255,255,255,.08);
-  border: 1px solid rgba(255,255,255,.12);
-}
-.brandFooter{
-  margin-top:18px;
-  display:flex;
-  align-items:center;
-  gap:10px;
-  color: rgba(255,255,255,.62);
-  font-size:12px;
-}
-.dot{
-  width:8px;height:8px;border-radius:50%;
-  background: rgba(34,197,94,.9);
-  box-shadow: 0 0 0 4px rgba(34,197,94,.18);
+.brand {
+  display: flex;
+  justify-content: center;
 }
 
-/* -------------- 表单区 -------------- */
-.panel{ display:flex; justify-content:center; }
-.card{
-  width:100%;
-  max-width:420px;
-  padding:22px 20px 18px;
-  border-radius:18px;
-  background: rgba(255,255,255,.94);
-  border: 1px solid rgba(15,23,42,.08);
-  box-shadow: 0 18px 45px rgba(0,0,0,.22);
+.brand-card {
+  width: 100%;
+  max-width: 520px;
+  padding: 28px;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  box-shadow: 0 16px 44px rgba(0, 0, 0, 0.34);
+  backdrop-filter: blur(9px);
 }
-.header{ margin-bottom:14px; }
-.headerTop{
-  display:flex;
-  align-items:center;
-  justify-content:space-between;
-  gap:10px;
-}
-.title{
-  margin:0;
-  font-size:20px;
-  letter-spacing:.2px;
-}
-.spark{ font-size:18px; opacity:.9; }
-.subtitle{
-  margin:6px 0 0;
-  font-size:13px;
-  color: rgba(15,23,42,.64);
-}
-.form{ margin-top:12px; }
 
-.field{ margin:12px 0; }
-label{
-  display:block;
-  font-size:12px;
-  color: rgba(15,23,42,.72);
-  margin-bottom:6px;
+.badge {
+  width: 64px;
+  height: 30px;
+  border-radius: 6px;
+  border: 1px solid rgba(197, 215, 255, 0.44);
+  background: rgba(179, 200, 239, 0.18);
+  color: rgba(228, 236, 255, 0.92);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  letter-spacing: 0.08em;
+  font-size: 12px;
+  font-weight: 700;
+  font-family: Consolas, 'Courier New', monospace;
+  margin-bottom: 14px;
 }
-input{
-  width:100%;
-  padding:11px 12px;
-  border-radius:12px;
-  border:1px solid rgba(15,23,42,.14);
-  outline:none;
-  background: rgba(255,255,255,.85);
-  transition: .15s ease;
-}
-input:focus{
-  border-color: rgba(59,130,246,.55);
-  box-shadow: 0 0 0 4px rgba(59,130,246,.14);
-}
-.passwordRow{
-  display:flex;
-  gap:10px;
-  align-items:center;
-}
-.passwordRow input{ flex:1; }
-.ghost{
-  height:42px;
-  padding:0 12px;
-  border-radius:12px;
-  border:1px solid rgba(15,23,42,.12);
-  background: rgba(15,23,42,.03);
-  cursor:pointer;
-}
-.ghost:hover{ background: rgba(15,23,42,.06); }
 
-.captchaRow{
-  display:flex;
-  gap:10px;
-  align-items:center;
+.brand-title {
+  margin: 0;
+  font-size: 28px;
+  letter-spacing: 0.3px;
+  color: rgba(255, 255, 255, 0.95);
 }
-.captchaImg{
-  width:118px;
-  height:42px;
-  border-radius:12px;
-  border:1px solid rgba(15,23,42,.14);
-  cursor:pointer;
-  object-fit:cover;
-  background:#fff;
-}
-.tiny{
-  margin:6px 0 0;
-  font-size:12px;
-  color: rgba(15,23,42,.55);
-}
-.warn{ color: rgba(220,38,38,.85); }
 
-.btn{
-  width:100%;
-  margin-top:14px;
-  padding:12px 14px;
-  border:none;
-  border-radius:12px;
-  cursor:pointer;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  gap:10px;
-  color:#fff;
-  background: linear-gradient(90deg, rgba(59,130,246,.95), rgba(99,102,241,.95));
-  box-shadow: 0 10px 20px rgba(59,130,246,.18);
-  transition: .15s ease;
+.brand-subtitle {
+  margin: 10px 0 18px;
+  color: rgba(221, 233, 255, 0.74);
+  line-height: 1.65;
 }
-.btn:hover{ transform: translateY(-1px); }
-.btn:disabled{
-  opacity:.6;
-  cursor:not-allowed;
-  transform:none;
-}
-.btnArrow{ opacity:.9; }
-.alert{
-  margin-top:12px;
-  padding:10px 12px;
-  border-radius:12px;
-  background: rgba(220,38,38,.08);
-  border: 1px solid rgba(220,38,38,.18);
-  color: rgba(153,27,27,.95);
-  display:flex;
-  gap:10px;
-  align-items:flex-start;
-}
-.alertIcon{ line-height:1.2; }
-.alertText{ font-size:12px; line-height:1.45; }
 
-.footer{
-  margin-top:14px;
-  font-size:12px;
-  color: rgba(15,23,42,.55);
-  display:flex;
-  flex-wrap:wrap;
-  gap:6px;
-  align-items:center;
-  justify-content:center;
+.meta-list {
+  margin: 0;
+  display: grid;
+  gap: 10px;
 }
-.sep{ opacity:.5; }
-.muted{ opacity:.85; }
 
-/* -------------- 响应式：小屏只保留登录卡 -------------- */
-@media (max-width: 920px){
-  .shell{
+.meta-item {
+  border-radius: 10px;
+  border: 1px solid rgba(198, 216, 255, 0.2);
+  background: rgba(255, 255, 255, 0.06);
+  padding: 10px 12px;
+}
+
+.meta-item dt {
+  color: rgba(227, 235, 255, 0.9);
+  font-size: 12px;
+}
+
+.meta-item dd {
+  margin: 4px 0 0;
+  color: rgba(205, 220, 251, 0.8);
+  font-size: 13px;
+}
+
+.brand-footer {
+  margin-top: 18px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: rgba(201, 219, 255, 0.68);
+  font-size: 12px;
+}
+
+.status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: rgba(34, 197, 94, 0.92);
+  box-shadow: 0 0 0 4px rgba(34, 197, 94, 0.2);
+}
+
+.panel {
+  display: flex;
+  justify-content: center;
+}
+
+.card {
+  width: 100%;
+  max-width: 430px;
+  padding: 24px 22px 18px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.95);
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  box-shadow: 0 18px 44px rgba(0, 0, 0, 0.24);
+}
+
+.header {
+  margin-bottom: 14px;
+}
+
+.header-tag {
+  margin: 0;
+  font-size: 11px;
+  letter-spacing: 0.11em;
+  color: rgba(56, 73, 109, 0.74);
+  font-family: Consolas, 'Courier New', monospace;
+}
+
+.title {
+  margin: 6px 0 0;
+  font-size: 21px;
+  letter-spacing: 0.2px;
+}
+
+.subtitle {
+  margin: 7px 0 0;
+  font-size: 13px;
+  color: rgba(15, 23, 42, 0.64);
+}
+
+.form {
+  margin-top: 12px;
+}
+
+.field {
+  margin: 12px 0;
+}
+
+label {
+  display: block;
+  font-size: 12px;
+  color: rgba(15, 23, 42, 0.72);
+  margin-bottom: 6px;
+}
+
+input {
+  width: 100%;
+  padding: 11px 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(15, 23, 42, 0.15);
+  outline: none;
+  background: rgba(255, 255, 255, 0.92);
+  transition: 0.15s ease;
+}
+
+input:focus {
+  border-color: rgba(43, 93, 187, 0.56);
+  box-shadow: 0 0 0 4px rgba(43, 93, 187, 0.14);
+}
+
+.password-row {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.password-row input {
+  flex: 1;
+}
+
+.ghost {
+  height: 42px;
+  min-width: 62px;
+  padding: 0 10px;
+  border-radius: 10px;
+  border: 1px solid rgba(15, 23, 42, 0.14);
+  background: rgba(15, 23, 42, 0.03);
+  color: rgba(15, 23, 42, 0.75);
+  cursor: pointer;
+  font-size: 12px;
+}
+
+.ghost:hover {
+  background: rgba(15, 23, 42, 0.07);
+}
+
+.captcha-row {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.captcha-img {
+  width: 118px;
+  height: 42px;
+  border-radius: 10px;
+  border: 1px solid rgba(15, 23, 42, 0.15);
+  cursor: pointer;
+  object-fit: cover;
+  background: #fff;
+}
+
+.tiny {
+  margin: 6px 0 0;
+  font-size: 12px;
+  color: rgba(15, 23, 42, 0.58);
+}
+
+.warn {
+  color: rgba(185, 28, 28, 0.92);
+}
+
+.btn {
+  width: 100%;
+  margin-top: 14px;
+  padding: 12px 14px;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  color: #fff;
+  background: linear-gradient(90deg, rgba(30, 73, 156, 0.95), rgba(35, 88, 182, 0.95));
+  box-shadow: 0 10px 20px rgba(30, 73, 156, 0.2);
+  transition: 0.15s ease;
+}
+
+.btn:hover {
+  transform: translateY(-1px);
+}
+
+.btn:disabled {
+  opacity: 0.64;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.alert {
+  margin-top: 12px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: rgba(220, 38, 38, 0.08);
+  border: 1px solid rgba(220, 38, 38, 0.18);
+  color: rgba(153, 27, 27, 0.95);
+  display: grid;
+  gap: 2px;
+}
+
+.alert-label {
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.alert-text {
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.footer {
+  margin-top: 14px;
+  font-size: 12px;
+  color: rgba(15, 23, 42, 0.56);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+  justify-content: center;
+}
+
+.sep {
+  opacity: 0.48;
+}
+
+.muted {
+  opacity: 0.86;
+}
+
+@media (max-width: 920px) {
+  .shell {
     grid-template-columns: 1fr;
-    padding:20px;
-    gap:18px;
+    padding: 20px;
+    gap: 18px;
   }
-  .brand{ display:none; }
-  .card{ max-width: 460px; }
+
+  .brand {
+    display: none;
+  }
+
+  .card {
+    max-width: 460px;
+  }
 }
 </style>
